@@ -8,6 +8,8 @@
     <string name="action_settings">Settings</string>
 
     <string name="menu_home">Home</string>
-    <string name="menu_gallery">Gallery</string>
+    <string name="menu_medicine">Medicine</string>
     <string name="menu_slideshow">Slideshow</string>
+    <string name="takenMedicineText">Have you Taken your medicine today?</string>
+    <string name="yesNoButtonText">Yes</string>
 </resources>

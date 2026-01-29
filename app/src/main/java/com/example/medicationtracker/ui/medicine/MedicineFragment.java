@@ -1,4 +1,4 @@
-package com.example.medicationtracker.ui.gallery;
+package com.example.medicationtracker.ui.medicine;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,18 +10,18 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.medicationtracker.databinding.FragmentGalleryBinding;
+import com.example.medicationtracker.databinding.FragmentMedicineBinding;
 
-public class GalleryFragment extends Fragment {
+public class MedicineFragment extends Fragment {
 
-    private FragmentGalleryBinding binding;
+    private FragmentMedicineBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        GalleryViewModel galleryViewModel =
-                new ViewModelProvider(this).get(GalleryViewModel.class);
+        MedicineViewModel galleryViewModel =
+                new ViewModelProvider(this).get(MedicineViewModel.class);
 
-        binding = FragmentGalleryBinding.inflate(inflater, container, false);
+        binding = FragmentMedicineBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
         final TextView textView = binding.textGallery;
