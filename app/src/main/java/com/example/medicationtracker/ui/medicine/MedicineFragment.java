@@ -2,11 +2,14 @@ package com.example.medicationtracker.ui.medicine;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
@@ -19,6 +22,7 @@ public class MedicineFragment extends Fragment {
     private FragmentMedicineBinding binding;
     private MedicineViewModel viewModel;
     private MedicineAdapter adapter;
+    private Medicine editingMedicine = null;
 
 
     public MedicineFragment() {
@@ -44,11 +48,39 @@ public class MedicineFragment extends Fragment {
             String time = binding.timeInput.getText().toString();
 
             if (!name.isEmpty() && !dosage.isEmpty() && !time.isEmpty()) {
-                viewModel.addMedicine(name, dosage, time);
-                binding.medicineInput.setText("");
+                if (editingMedicine != null) {
+                    Medicine updatedMedicine = new Medicine(editingMedicine.getId(), name, dosage, time);
+                    viewModel.updateMedicine(updatedMedicine);
+                    Toast.makeText(requireContext(), "Medicine updated", Toast.LENGTH_SHORT).show();
+                    editingMedicine = null;
+                } else {
+                    viewModel.addMedicine(0, name, dosage, time);
+                }
+                clearInputs();
             }
         });
 
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerview, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                Medicine medicine = adapter.getMedicineAt(viewHolder.getAdapterPosition());
+                viewModel.deleteMedicine(medicine);
+                Toast.makeText(requireContext(), "Medicine deleted", Toast.LENGTH_SHORT).show();
+            }
+        }).attachToRecyclerView(binding.medicineRecyclerView);
+
+        adapter.setOnItemClickListener(medicine -> {
+            binding.medicineInput.setText(medicine.getName());
+            binding.dosageInput.setText(medicine.getDosage());
+            binding.timeInput.setText(medicine.getTime());
+
+            editingMedicine = medicine;
+        });
     }
 
     private void renderMedicines(List<Medicine> medicines) {

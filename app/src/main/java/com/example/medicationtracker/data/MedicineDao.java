@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.example.medicationtracker.Medicine;
 
@@ -24,4 +25,7 @@ public interface MedicineDao {
 
     @Query("SELECT * FROM medicine_table ORDER BY time ASC")
     LiveData<List<Medicine>> getAllMedicines();
+
+    @Update
+    void update(Medicine medicine);
 }

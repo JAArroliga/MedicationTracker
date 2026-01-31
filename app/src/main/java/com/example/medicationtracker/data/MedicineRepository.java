@@ -35,4 +35,8 @@ public class MedicineRepository {
     public LiveData<List<Medicine>> getAllMedicines() {
         return allMedicines;
     }
+
+    public void update(Medicine medicine) {
+        executor.execute(() -> medicineDao.update(medicine));
+    }
 }

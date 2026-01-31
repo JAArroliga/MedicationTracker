@@ -12,7 +12,8 @@ public class Medicine {
     private String dosage;
     private String time;
 
-    public Medicine(String name, String dosage, String time) {
+    public Medicine(int id, String name, String dosage, String time) {
+        this.id = id;
         this.name = name;
         this.dosage = dosage;
         this.time = time;
@@ -39,7 +40,7 @@ public class Medicine {
         this.id = id;
     }
 
-    public void setName(String dosage){
+    public void setName(String name){
         this.name = name;
     }
 
