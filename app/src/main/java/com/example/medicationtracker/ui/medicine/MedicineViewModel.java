@@ -1,29 +1,40 @@
 package com.example.medicationtracker.ui.medicine;
 
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.data.MedicineRepository;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MedicineViewModel extends ViewModel {
+public class MedicineViewModel extends AndroidViewModel {
 
-    private final MutableLiveData<List<Medicine>> medicines = new MutableLiveData<>(new ArrayList<>());
+    private MedicineRepository repository;
+    private LiveData<List<Medicine>> allMedicines;
 
-    public LiveData<List<Medicine>> getMedicines() {
-        return medicines;
+    public MedicineViewModel(@NonNull Application application) {
+        super(application);
+        repository = new MedicineRepository(application);
+        allMedicines = repository.getAllMedicines();
     }
 
-    public void addMedicine(Medicine medicine) {
-     List<Medicine> current = medicines.getValue();
-     if (current == null) return;
+    public void insert(Medicine medicine) {
+        repository.insert(medicine);
+    }
 
-     current = new ArrayList<>(current);
-     current.add(medicine);
-     medicines.setValue(current);
+    public LiveData<List<Medicine>> getAllMedicines() {
+        return allMedicines;
+    }
+
+    public void addMedicine(String name, String dosage, String time) {
+        Medicine medicine = new Medicine(name, dosage, time);
+        repository.insert(medicine);
     }
 }

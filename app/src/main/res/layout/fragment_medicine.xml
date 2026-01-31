@@ -7,7 +7,19 @@
 
     <EditText
         android:id="@+id/medicineInput"
-        android:hint="Medicine name"
+        android:hint="Medicine Name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/dosageInput"
+        android:hint="Dosage Amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/time_input"
+        android:hint="Frequency"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
@@ -17,9 +29,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <TextView
-        android:id="@+id/medicineListText"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/medicineRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="16dp" />
+
 </LinearLayout>
