@@ -1,5 +1,6 @@
 package com.example.medicationtracker.ui.medicine;
 
+import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -15,7 +16,10 @@ import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
 import com.example.medicationtracker.databinding.FragmentMedicineBinding;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class MedicineFragment extends Fragment {
 
@@ -23,6 +27,7 @@ public class MedicineFragment extends Fragment {
     private MedicineViewModel viewModel;
     private MedicineAdapter adapter;
     private Medicine editingMedicine = null;
+    private String selectedTime = "";
 
 
     public MedicineFragment() {
@@ -42,10 +47,27 @@ public class MedicineFragment extends Fragment {
         binding.medicineRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.medicineRecyclerView.setAdapter(adapter);
 
+        binding.timeButton.setOnClickListener(v -> {
+            Calendar calendar = Calendar.getInstance();
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+
+            TimePickerDialog timePickerDialog = new TimePickerDialog(requireContext(), (timePickerView, hourOfDay, minute1) -> {
+                Calendar c = Calendar.getInstance();
+                c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                c.set(Calendar.MINUTE, minute1);
+                SimpleDateFormat format = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+                selectedTime = format.format(c.getTime());
+                binding.timeLabel.setText(selectedTime);
+            }, hour, minute, false
+            );
+            timePickerDialog.show();
+        });
+
         binding.addMedicineButton.setOnClickListener(v -> {
             String name = binding.medicineInput.getText().toString();
             String dosage = binding.dosageInput.getText().toString();
-            String time = binding.timeInput.getText().toString();
+            String time = binding.timeLabel.getText().toString();
 
             if (!name.isEmpty() && !dosage.isEmpty() && !time.isEmpty()) {
                 if (editingMedicine != null) {
@@ -77,7 +99,7 @@ public class MedicineFragment extends Fragment {
         adapter.setOnItemClickListener(medicine -> {
             binding.medicineInput.setText(medicine.getName());
             binding.dosageInput.setText(medicine.getDosage());
-            binding.timeInput.setText(medicine.getTime());
+            binding.timeLabel.setText(medicine.getTime());
 
             editingMedicine = medicine;
         });
@@ -95,7 +117,7 @@ public class MedicineFragment extends Fragment {
     private void clearInputs() {
         binding.medicineInput.setText("");
         binding.dosageInput.setText("");
-        binding.timeInput.setText("");
+        binding.timeLabel.setText("Time");
 
     }
 

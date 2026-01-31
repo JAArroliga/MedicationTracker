@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.databinding.FragmentHomeBinding;
 
+import java.util.List;
 import java.util.Map;
 
 public class HomeFragment extends Fragment {
@@ -44,45 +45,45 @@ public class HomeFragment extends Fragment {
         binding.medicineRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.medicineRecyclerView.setAdapter(adapter);
 
-        homeViewModel.getMedicines().observe(getViewLifecycleOwner(), medicinesList -> {
-                if (medicinesList != null && !medicinesList.isEmpty()) {
-                    binding.medicineRecyclerView.setVisibility(View.VISIBLE);
-                    binding.takenMedicineTodayTextView.setVisibility(View.VISIBLE);
+        homeViewModel.getMedicines().observe(getViewLifecycleOwner(), medicines -> updateUI());
+        homeViewModel.getTakenMap().observe(getViewLifecycleOwner(), taken -> updateUI());
 
-                    Map<Integer, Boolean> taken = homeViewModel.getTakenMap().getValue();
-                    adapter.submitList(medicinesList, taken);
-
-                } else {
-                    binding.medicineRecyclerView.setVisibility(View.GONE);
-                    binding.takenMedicineTodayTextView.setText("No medicines added yet. Add some to start tracking");
-                }
-
-        });
-
-        homeViewModel.getTakenMap().observe(getViewLifecycleOwner(), takenMap -> {
-            if (takenMap != null && !takenMap.isEmpty()) {
-                boolean allTaken = true;
-
-                for (Boolean taken : takenMap.values()) {
-                    if (!taken) {
-                        allTaken = false;
-                        break;
-                    }
-                }
-
-                if (allTaken) {
-                    takenMedicineTextView.setText("Congratulations! You have taken all your medicines today!");
-                }
-            }
-        });
-
-
-
-
-        homeViewModel.getTakenMap().observe(getViewLifecycleOwner(), map ->
-                adapter.submitList(homeViewModel.getMedicines().getValue(), map)
-        );
 
         adapter.setOnTakeClickListener(medicine -> homeViewModel.markTaken(medicine.getId()));
+    }
+
+    private void updateUI() {
+        Map<Integer, Boolean> taken = homeViewModel.getTakenMap().getValue();
+        List<Medicine> medicines = homeViewModel.getMedicines().getValue();
+
+        if (medicines == null || medicines.isEmpty()) {
+            binding.medicineRecyclerView.setVisibility(View.GONE);
+            binding.takenMedicineTodayTextView.setText("No medicines added yet. Add some to start tracking");
+            return;
+        }
+
+        binding.medicineRecyclerView.setVisibility(View.VISIBLE);
+
+        adapter.submitList(medicines, taken);
+
+        if (taken != null && !taken.isEmpty()) {
+            boolean allTaken = true;
+
+            for (Medicine medicine: medicines) {
+                Boolean takenStatus = taken != null? taken.get(medicine.getId()) : null;
+                if (takenStatus == null || !takenStatus) {
+                    allTaken = false;
+                    break;
+                }
+            }
+
+            if (allTaken) {
+                takenMedicineTextView.setText("Congratulations! You have taken all your medicines today!");
+            } else {
+                takenMedicineTextView.setText("You have medicines left to take today.");
+            }
+        } else {
+            takenMedicineTextView.setText("Have you Taken Your medicines yet?");
+        }
     }
 }
