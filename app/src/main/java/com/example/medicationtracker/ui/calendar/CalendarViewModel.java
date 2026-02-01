@@ -1,19 +1,32 @@
 package com.example.medicationtracker.ui.calendar;
 
+import android.app.Application;
+
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
+import androidx.annotation.NonNull;
 
-public class CalendarViewModel extends ViewModel {
+import com.example.medicationtracker.data.DayStatus;
+import com.example.medicationtracker.data.MedicineRepository;
 
-    private final MutableLiveData<String> mText;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.HashMap;
+import java.util.Map;
 
-    public CalendarViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is slideshow fragment");
+public class CalendarViewModel extends AndroidViewModel {
+
+    private final MutableLiveData<Map<LocalDate, DayStatus>> medicationStatusMap = new MutableLiveData<>(new HashMap<>());
+    private MedicineRepository medicineRepository;
+
+    public CalendarViewModel(@NonNull Application application) {
+        super(application);
+        medicineRepository = new MedicineRepository(application);
     }
 
-    public LiveData<String> getText() {
-        return mText;
+    private LiveData<Map<LocalDate, DayStatus>> getMonthMedicationStatus (YearMonth month) {
+        return medicineRepository.getMedicationStatusMap(month);
     }
+
 }

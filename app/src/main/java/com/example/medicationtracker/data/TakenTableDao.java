@@ -28,4 +28,7 @@ public interface TakenTableDao {
 
     @Query("SELECT * FROM taken_table WHERE date = :date")
     List<TakenTable> getTakenMapForDate(String date);
+
+    @Query("SELECT * FROM taken_table WHERE date BETWEEN :startDate AND :endDate")
+    List<TakenTable> getTakenMapForDateRange(String startDate, String endDate);
 }

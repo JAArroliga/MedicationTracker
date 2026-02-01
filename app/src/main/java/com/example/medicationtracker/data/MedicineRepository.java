@@ -8,6 +8,9 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.TakenTable;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,4 +71,49 @@ public class MedicineRepository {
             takenTableDao.insert(new TakenTable(medicineId, today, taken));
         });
     }
+
+    public LiveData<Map<LocalDate, DayStatus>> getMedicationStatusMap(YearMonth month) {
+        MutableLiveData<Map<LocalDate, DayStatus>> statusMap = new MutableLiveData<>();
+
+        LocalDate start = month.atDay(1);
+        LocalDate end = month.atEndOfMonth();
+
+        executor.execute(() -> {
+            Map<LocalDate, DayStatus> map = new HashMap<>();
+            List<TakenTable> takenList = takenTableDao.getTakenMapForDateRange(start.toString(), end.toString());
+
+            for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
+                List<TakenTable> dayEntries = new ArrayList<>();
+                for (TakenTable tt : takenList) {
+                    if (LocalDate.parse(tt.getDate()).equals(current)) {
+                        dayEntries.add(tt);
+                    }
+                }
+
+                int totalMeds = medicineDao.getAllMedicines().getValue() != null ? medicineDao.getAllMedicines().getValue().size() : 0;
+                int takenCount = 0;
+                for (TakenTable tt : dayEntries) {
+                    if (tt.isTaken()) {
+                        takenCount++;
+                    }
+                }
+
+                DayStatus status;
+                if (takenCount == 0) {
+                    status = DayStatus.NONE;
+                } else if (takenCount < totalMeds) {
+                    status = DayStatus.PARTIAL;
+                } else {
+                    status = DayStatus.ALL_TAKEN;
+                }
+
+                map.put(current, status);
+            }
+
+            statusMap.postValue(map);
+        });
+
+        return statusMap;
+    }
+
 }

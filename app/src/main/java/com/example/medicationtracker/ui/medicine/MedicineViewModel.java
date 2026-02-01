@@ -5,13 +5,10 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.data.MedicineRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MedicineViewModel extends AndroidViewModel {

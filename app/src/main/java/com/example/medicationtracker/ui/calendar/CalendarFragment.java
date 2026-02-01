@@ -7,9 +7,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.applandeo.materialcalendarview.CalendarView;
@@ -65,10 +63,10 @@ public class CalendarFragment extends Fragment {
                         iconRes = R.drawable.ic_red_dot;
                 }
 
-                events.add(new EventDay(calendar, iconRes));
+                eventDays.add(new EventDay(calendar, iconRes));
             }
 
-            calendarView.setEvents(events);
+            calendarView.setEvents(eventDays);
         });
     }
 
@@ -76,7 +74,7 @@ public class CalendarFragment extends Fragment {
         calendarView.setOnDayClickListener(eventDay -> {
             Calendar clicked = eventDay.getCalendar();
 
-            LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH);
+            LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
 
             List<String> meds = calendarViewModel.getMedicationsForDate(date);
 
@@ -84,6 +82,42 @@ public class CalendarFragment extends Fragment {
 
             Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void setupCalendarObservers() {
+        calendarViewModel.getMedicationStatusMap()
+                .observe(getViewLifecycleOwner(), statusMap -> {
+
+                    List<EventDay> events = new ArrayList<>();
+
+                    for (Map.Entry<LocalDate, String> entry : statusMap.entrySet()) {
+                        LocalDate date = entry.getKey();
+                        String status = entry.getValue();
+
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.set(
+                                date.getYear(),
+                                date.getMonthValue() - 1,
+                                date.getDayOfMonth()
+                        );
+
+                        int icon;
+                        switch (status) {
+                            case "all_taken":
+                                icon = R.drawable.ic_green_dot;
+                                break;
+                            case "partial":
+                                icon = R.drawable.ic_yellow_dot;
+                                break;
+                            default:
+                                icon = R.drawable.ic_red_dot;
+                        }
+
+                        events.add(new EventDay(calendar, icon));
+                    }
+
+                    calendarView.setEvents(events);
+                });
     }
 
     @Override
