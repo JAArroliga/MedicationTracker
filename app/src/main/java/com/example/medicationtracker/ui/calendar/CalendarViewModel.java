@@ -25,7 +25,7 @@ public class CalendarViewModel extends AndroidViewModel {
         medicineRepository = new MedicineRepository(application);
     }
 
-    private LiveData<Map<LocalDate, DayStatus>> getMonthMedicationStatus (YearMonth month) {
+    LiveData<Map<LocalDate, DayStatus>> getMonthMedicationStatus(YearMonth month) {
         return medicineRepository.getMedicationStatusMap(month);
     }
 

@@ -13,9 +13,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
 import com.example.medicationtracker.R;
+import com.example.medicationtracker.data.DayStatus;
 import com.example.medicationtracker.databinding.FragmentCalendarBinding;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -34,39 +36,27 @@ public class CalendarFragment extends Fragment {
         calendarView = binding.calendarView;
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
 
-        setupCalendarObservers();
+        setupCalendar();
         setupDayClickListener();
 
         return binding.getRoot();
     }
 
     private void setupCalendar() {
-        calendarViewModel.getMedicationStatusMap().observe(getViewLifecycleOwner(), statusMap -> {
-            List<EventDay> eventDays = new ArrayList<>();
+        calendarViewModel.getMonthMedicationStatus(YearMonth.now()).observe(getViewLifecycleOwner(), map -> {
+            List<EventDay> events = new ArrayList<>();
 
-            for (Map.Entry<LocalDate, String> entry : statusMap.entrySet()) {
+            for (Map.Entry<LocalDate, DayStatus> entry : map.entrySet()) {
                 LocalDate date = entry.getKey();
-                String status = entry.getValue();
+                DayStatus status = entry.getValue();
 
+                int iconRes = getIconForStatus(status);
                 Calendar calendar = Calendar.getInstance();
                 calendar.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth());
-
-                int iconRes;
-                switch (status) {
-                    case "all_taken":
-                        iconRes = R.drawable.ic_green_dot;
-                        break;
-                    case "partial":
-                        iconRes = R.drawable.ic_yellow_dot;
-                        break;
-                    default:
-                        iconRes = R.drawable.ic_red_dot;
-                }
-
-                eventDays.add(new EventDay(calendar, iconRes));
+                EventDay eventDay = new EventDay(calendar, iconRes);
+                events.add(eventDay);
             }
-
-            calendarView.setEvents(eventDays);
+            calendarView.setEvents(events);
         });
     }
 
@@ -84,40 +74,16 @@ public class CalendarFragment extends Fragment {
         });
     }
 
-    private void setupCalendarObservers() {
-        calendarViewModel.getMedicationStatusMap()
-                .observe(getViewLifecycleOwner(), statusMap -> {
-
-                    List<EventDay> events = new ArrayList<>();
-
-                    for (Map.Entry<LocalDate, String> entry : statusMap.entrySet()) {
-                        LocalDate date = entry.getKey();
-                        String status = entry.getValue();
-
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.set(
-                                date.getYear(),
-                                date.getMonthValue() - 1,
-                                date.getDayOfMonth()
-                        );
-
-                        int icon;
-                        switch (status) {
-                            case "all_taken":
-                                icon = R.drawable.ic_green_dot;
-                                break;
-                            case "partial":
-                                icon = R.drawable.ic_yellow_dot;
-                                break;
-                            default:
-                                icon = R.drawable.ic_red_dot;
-                        }
-
-                        events.add(new EventDay(calendar, icon));
-                    }
-
-                    calendarView.setEvents(events);
-                });
+    public int getIconForStatus(DayStatus status) {
+        switch (status) {
+            case ALL_TAKEN:
+                return R.drawable.ic_green_dot;
+            case PARTIAL:
+                return R.drawable.ic_yellow_dot;
+            case NONE:
+                return R.drawable.ic_red_dot;
+        }
+        return 0;
     }
 
     @Override
