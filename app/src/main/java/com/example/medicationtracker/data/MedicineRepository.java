@@ -80,17 +80,19 @@ public class MedicineRepository {
 
         executor.execute(() -> {
             Map<LocalDate, DayStatus> map = new HashMap<>();
+            List<Medicine> allMeds = medicineDao.getAllMedicinesList();
+            int totalMeds = allMeds.size();
             List<TakenTable> takenList = takenTableDao.getTakenMapForDateRange(start.toString(), end.toString());
 
             for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
+
                 List<TakenTable> dayEntries = new ArrayList<>();
-                for (TakenTable tt : takenList) {
+                for (TakenTable tt: takenList) {
                     if (LocalDate.parse(tt.getDate()).equals(current)) {
                         dayEntries.add(tt);
                     }
                 }
 
-                int totalMeds = medicineDao.getAllMedicines().getValue() != null ? medicineDao.getAllMedicines().getValue().size() : 0;
                 int takenCount = 0;
                 for (TakenTable tt : dayEntries) {
                     if (tt.isTaken()) {
@@ -99,23 +101,22 @@ public class MedicineRepository {
                 }
 
                 DayStatus status;
-                if (dayEntries.isEmpty()) {
+                if (totalMeds == 0) { //No meds
                     status = DayStatus.NO_DATA;
-                } else if (takenCount == 0) {
+                } else if (dayEntries.isEmpty()) { //No entries
+                    status = DayStatus.NO_DATA;
+                } else if (takenCount == 0) { //red
                     status = DayStatus.NONE;
-                } else if (takenCount < totalMeds) {
+                } else if (takenCount < totalMeds) { //yellow
                     status = DayStatus.PARTIAL;
-                } else {
+                } else { // green
                     status = DayStatus.ALL_TAKEN;
                 }
 
-
                 map.put(current, status);
             }
-
             statusMap.postValue(map);
         });
-
         return statusMap;
     }
 
