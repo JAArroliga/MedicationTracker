@@ -28,4 +28,7 @@ public interface MedicineDao {
 
     @Update
     void update(Medicine medicine);
+
+    @Query("SELECT * FROM medicine_table")
+    List<Medicine> getAllMedicinesList();
 }

@@ -116,4 +116,26 @@ public class MedicineRepository {
         return statusMap;
     }
 
+    public List<Medicine> getMissedMedicine(LocalDate date) {
+        List<Medicine> missedMedicines = new ArrayList<>();
+
+        List<Medicine> expectedMedicines = medicineDao.getAllMedicinesList();
+        List<TakenTable> takenEntries = takenTableDao.getTakenMapForDate(date.toString());
+        Map<Integer, Boolean> takenMap = new HashMap<>();
+
+        for (TakenTable tt : takenEntries) {
+            takenMap.put(tt.getMedicineId(), tt.isTaken());
+        }
+
+        for (Medicine med : expectedMedicines) {
+            Boolean wasTaken = takenMap.get(med.getId());
+
+            if (wasTaken == null || !wasTaken) {
+                missedMedicines.add(med);
+            }
+        }
+
+        return missedMedicines;
+    }
+
 }

@@ -36,6 +36,8 @@ public class CalendarFragment extends Fragment {
         calendarView = binding.calendarView;
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
 
+        calendarViewModel.loadMonthStatus(YearMonth.now());
+
         setupCalendar();
         setupDayClickListener();
 
@@ -43,19 +45,32 @@ public class CalendarFragment extends Fragment {
     }
 
     private void setupCalendar() {
-        calendarViewModel.getMonthMedicationStatus(YearMonth.now()).observe(getViewLifecycleOwner(), map -> {
-            List<EventDay> events = new ArrayList<>();
+        YearMonth month = YearMonth.now();
+        LocalDate start = month.atDay(1);
+        LocalDate end = month.atEndOfMonth();
 
-            for (Map.Entry<LocalDate, DayStatus> entry : map.entrySet()) {
-                LocalDate date = entry.getKey();
-                DayStatus status = entry.getValue();
+        calendarViewModel.getMonthMedicationStatus(month).observe(getViewLifecycleOwner(), statusMap -> {
+            List<EventDay> events = new ArrayList<>();
+            LocalDate today = LocalDate.now();
+
+            for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
+                DayStatus status;
+
+                if (current.isAfter(today)) {
+                    status = DayStatus.NO_DATA;
+                } else if (statusMap.containsKey(current)) {
+                    status = statusMap.get(current);
+                } else {
+                    status = DayStatus.NO_DATA;
+                }
 
                 int iconRes = getIconForStatus(status);
+
                 Calendar calendar = Calendar.getInstance();
-                calendar.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth());
-                EventDay eventDay = new EventDay(calendar, iconRes);
-                events.add(eventDay);
+                calendar.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
+                events.add(new EventDay(calendar, iconRes));
             }
+
             calendarView.setEvents(events);
         });
     }
@@ -66,11 +81,9 @@ public class CalendarFragment extends Fragment {
 
             LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
 
-            List<String> meds = calendarViewModel.getMedicationsForDate(date);
-
-            String message = meds.isEmpty() ? "No medications taken" : String.join("\n", meds);
-
-            Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            calendarViewModel.getDaySummary(date).observe(getViewLifecycleOwner(), summary -> {
+                Toast.makeText(getContext(), summary, Toast.LENGTH_LONG).show();
+            });
         });
     }
 
@@ -82,6 +95,8 @@ public class CalendarFragment extends Fragment {
                 return R.drawable.ic_yellow_dot;
             case NONE:
                 return R.drawable.ic_red_dot;
+            case NO_DATA:
+                return R.drawable.ic_grey_dot;
         }
         return 0;
     }
