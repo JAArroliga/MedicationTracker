@@ -99,13 +99,16 @@ public class MedicineRepository {
                 }
 
                 DayStatus status;
-                if (takenCount == 0) {
+                if (dayEntries.isEmpty()) {
+                    status = DayStatus.NO_DATA;
+                } else if (takenCount == 0) {
                     status = DayStatus.NONE;
                 } else if (takenCount < totalMeds) {
                     status = DayStatus.PARTIAL;
                 } else {
                     status = DayStatus.ALL_TAKEN;
                 }
+
 
                 map.put(current, status);
             }
@@ -136,6 +139,10 @@ public class MedicineRepository {
         }
 
         return missedMedicines;
+    }
+
+    public boolean hasNoEntriesForDate(LocalDate date) {
+        return takenTableDao.getTakenMapForDate(date.toString()).isEmpty();
     }
 
 }

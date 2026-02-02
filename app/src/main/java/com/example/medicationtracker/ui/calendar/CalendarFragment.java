@@ -55,20 +55,22 @@ public class CalendarFragment extends Fragment {
             LocalDate today = LocalDate.now();
 
             for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
-                DayStatus status;
+
+                DayStatus status = statusMap.getOrDefault(current, DayStatus.NO_DATA);
 
                 if (current.isAfter(today)) {
-                    status = DayStatus.NO_DATA;
-                } else if (statusMap.containsKey(current)) {
-                    status = statusMap.get(current);
-                } else {
                     status = DayStatus.NO_DATA;
                 }
 
                 int iconRes = getIconForStatus(status);
 
                 Calendar calendar = Calendar.getInstance();
-                calendar.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
+                calendar.set(
+                        current.getYear(),
+                        current.getMonthValue() - 1,
+                        current.getDayOfMonth()
+                );
+
                 events.add(new EventDay(calendar, iconRes));
             }
 
