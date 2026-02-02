@@ -24,7 +24,7 @@ public class CalendarViewModel extends AndroidViewModel {
     private final MutableLiveData<Map<LocalDate, DayStatus>> medicationStatusMap = new MutableLiveData<>(new HashMap<>());
     private MedicineRepository medicineRepository;
     private Executor executor = Executors.newSingleThreadExecutor();
-
+    private final MutableLiveData<Map<LocalDate, DayStatus>> monthStatusMap = new MutableLiveData<>(new HashMap<>());
 
     public CalendarViewModel(@NonNull Application application) {
         super(application);
@@ -43,15 +43,23 @@ public class CalendarViewModel extends AndroidViewModel {
         MutableLiveData<String> summaryLiveData = new MutableLiveData<>();
 
         executor.execute(() -> {
-            Map<LocalDate, DayStatus> map = medicationStatusMap.getValue();
+            LocalDate today = LocalDate.now();
+            Map<LocalDate, DayStatus> map = monthStatusMap.getValue();
             DayStatus status = (map != null) ? map.get(date) : null;
+
             String summary;
 
-            if (status == null) {
+            if (date.isAfter(today)) {
                 summary = "No data for " + date;
-            } else if (status == DayStatus.ALL_TAKEN) {
+            }
+
+            else if (status == null || status == DayStatus.NO_DATA) {
+                summary = "No data for " + date;
+            }
+            else if (status == DayStatus.ALL_TAKEN) {
                 summary = "All medications taken";
-            } else {
+            }
+            else {
                 List<Medicine> missedMedicines = medicineRepository.getMissedMedicine(date);
 
                 if (missedMedicines.isEmpty()) {
@@ -65,6 +73,7 @@ public class CalendarViewModel extends AndroidViewModel {
                     summary = sb.toString();
                 }
             }
+
             summaryLiveData.postValue(summary);
         });
 
