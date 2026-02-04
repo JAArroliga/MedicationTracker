@@ -1,10 +1,8 @@
 package com.example.medicationtracker;
 
 import android.os.Bundle;
-import android.view.View;
 import android.view.Menu;
 
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.navigation.NavController;
@@ -41,6 +39,25 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+
+        binding.fabDynamic.setOnClickListener(v -> {
+            int currentDest = navController.getCurrentDestination().getId();
+            if (currentDest == R.id.nav_home) {
+                navController.navigate(R.id.nav_medicine);
+            } else {
+                navController.navigate(R.id.nav_home);
+            }
+        });
+
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            if (destination.getId() == R.id.nav_home) {
+                binding.fabDynamic.setImageResource(R.drawable.ic_menu_medicine_icon);
+            } else {
+                binding.fabDynamic.setImageResource(R.drawable.ic_menu_home_icon);
+            }
+        });
+
+
     }
 
     @Override

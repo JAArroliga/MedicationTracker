@@ -12,4 +12,5 @@
     <string name="menu_calendar">Calendar</string>
     <string name="takenMedicineText">Have you Taken your medicine today?</string>
     <string name="yesNoButtonText">Yes</string>
+    <string name="medicationFragmentInstructions">Tap on a medication to edit, swipe to delete</string>
 </resources>

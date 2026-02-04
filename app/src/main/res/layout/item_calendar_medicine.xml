@@ -40,10 +40,11 @@
         android:id="@+id/takenTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textStyle="bold"
         android:text="Taken"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/infoContainer"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/infoContainer"
-        app:layout_constraintBottom_toBottomOf="@id/infoContainer" />
+        app:layout_constraintTop_toTopOf="@id/infoContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

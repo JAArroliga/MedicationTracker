@@ -35,6 +35,7 @@ public class CalendarFragment extends Fragment {
         binding = FragmentCalendarBinding.inflate(inflater, container, false);
 
         calendarView = binding.calendarView;
+        calendarView.setSelectionBackground(R.color.grey);
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
 
         dayMedicineAdapter = new DayMedicineAdapter();
@@ -57,6 +58,9 @@ public class CalendarFragment extends Fragment {
             LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
 
             calendarViewModel.setSelectedDate(date);
+
+            String formattedDate = String.format("%02d/%02d/%04d", clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH), clicked.get(Calendar.YEAR));
+            binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
         });
     }
 

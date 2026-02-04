@@ -10,9 +10,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.R;
 import com.example.medicationtracker.databinding.FragmentHomeBinding;
 
 import java.util.List;
@@ -49,6 +52,8 @@ public class HomeFragment extends Fragment {
 
 
         adapter.setOnTakeClickListener(medicine -> homeViewModel.markTaken(medicine.getId()));
+
+
     }
 
     private void updateUI() {
