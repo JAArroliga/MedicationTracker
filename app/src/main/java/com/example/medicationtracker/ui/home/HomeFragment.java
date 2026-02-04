@@ -52,7 +52,7 @@ public class HomeFragment extends Fragment {
 
 
         adapter.setOnTakeClickListener(medicine -> homeViewModel.markTaken(medicine.getId()));
-
+        adapter.setOnUndoClickListener(medicine -> homeViewModel.undoTaken(medicine.getId()));
 
     }
 

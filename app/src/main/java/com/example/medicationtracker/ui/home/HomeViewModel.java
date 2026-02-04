@@ -37,10 +37,10 @@ public class HomeViewModel extends AndroidViewModel {
 
     public void markTaken(int medicineId) {
         repository.markTaken(medicineId, true);
-
-        Map<Integer, Boolean> current = takenMap.getValue();
-        Map<Integer, Boolean> updated = current == null ? new HashMap<>() : new HashMap<>(current);
-        updated.put(medicineId, true);
-        ((MutableLiveData<Map<Integer, Boolean>>) takenMap).postValue(updated);
     }
+
+    public void undoTaken(int medicineId) {
+        repository.markTaken(medicineId, false);
+    }
+
 }

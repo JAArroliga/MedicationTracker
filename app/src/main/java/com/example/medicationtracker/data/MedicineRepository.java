@@ -52,19 +52,24 @@ public class MedicineRepository {
     }
 
     public LiveData<Map<Integer, Boolean>> getTakenMapForToday() {
-        MutableLiveData<Map<Integer, Boolean>> liveMap = new MutableLiveData<>();
-        String today = java.time.LocalDate.now().toString();
+        String today = LocalDate.now().toString();
 
-        executor.execute(() -> {
-            List<TakenTable> list = takenTableDao.getTakenMapForDate(today);
+        LiveData<List<TakenTable>> source =
+                takenTableDao.getTakenForDateLive(today);
+
+        MediatorLiveData<Map<Integer, Boolean>> result = new MediatorLiveData<>();
+
+        result.addSource(source, list -> {
             Map<Integer, Boolean> map = new HashMap<>();
-            for (TakenTable mt : list) {
-                map.put(mt.getMedicineId(), mt.isTaken());
+            if (list != null) {
+                for (TakenTable t : list) {
+                    map.put(t.getMedicineId(), t.isTaken());
+                }
             }
-            liveMap.postValue(map);
+            result.setValue(map);
         });
 
-        return liveMap;
+        return result;
     }
 
     public void markTaken(int medicineId, boolean taken) {
