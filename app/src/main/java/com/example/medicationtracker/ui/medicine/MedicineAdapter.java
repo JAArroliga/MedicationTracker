@@ -80,7 +80,8 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
         void bind(Medicine medicine) {
             name.setText(medicine.getName());
-            details.setText(medicine.getDosage() + " • " + medicine.getTime());
+            details.setText(medicine.getFormattedDosage() + " • " + medicine.getTime());
+
         }
     }
 }

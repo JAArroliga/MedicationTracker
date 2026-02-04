@@ -3,6 +3,7 @@ package com.example.medicationtracker.ui.medicine;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -29,12 +30,11 @@ public class MedicineFragment extends Fragment {
     private Medicine editingMedicine = null;
     private String selectedTime = "";
 
-
     public MedicineFragment() {
         super(R.layout.fragment_medicine);
     }
 
-
+    @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
@@ -46,6 +46,15 @@ public class MedicineFragment extends Fragment {
 
         binding.medicineRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.medicineRecyclerView.setAdapter(adapter);
+
+        ArrayAdapter<CharSequence> unitAdapter =
+                ArrayAdapter.createFromResource(
+                        requireContext(),
+                        R.array.dosage_units,
+                        android.R.layout.simple_spinner_item
+                );
+        unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        binding.dosageUnitSpinner.setAdapter(unitAdapter);
 
         binding.timeButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
@@ -59,32 +68,54 @@ public class MedicineFragment extends Fragment {
                 SimpleDateFormat format = new SimpleDateFormat("hh:mm a", Locale.getDefault());
                 selectedTime = format.format(c.getTime());
                 binding.timeLabel.setText(selectedTime);
-            }, hour, minute, false
-            );
+            }, hour, minute, false);
             timePickerDialog.show();
         });
 
         binding.addMedicineButton.setOnClickListener(v -> {
-            String name = binding.medicineInput.getText().toString();
-            String dosage = binding.dosageInput.getText().toString();
-            String time = binding.timeLabel.getText().toString();
+            String name = binding.medicineInput.getText().toString().trim();
+            String amountText = binding.dosageAmountInput.getText().toString().trim();
+            String unit = binding.dosageUnitSpinner.getSelectedItem().toString();
+            String time = binding.timeLabel.getText().toString().trim();
 
-            if (!name.isEmpty() && !dosage.isEmpty() && !time.isEmpty()) {
-                if (editingMedicine != null) {
-                    Medicine updatedMedicine = new Medicine(editingMedicine.getId(), name, dosage, time);
-                    viewModel.updateMedicine(updatedMedicine);
-                    Toast.makeText(requireContext(), "Medicine updated", Toast.LENGTH_SHORT).show();
-                    editingMedicine = null;
-                } else {
-                    viewModel.addMedicine(0, name, dosage, time);
-                }
-                clearInputs();
+            if (name.isEmpty()) {
+                binding.medicineInput.setError("Required");
+                return;
             }
+
+            if (amountText.isEmpty()) {
+                binding.dosageAmountInput.setError("Required");
+                return;
+            }
+
+            double amount;
+            try {
+                amount = Double.parseDouble(amountText);
+            } catch (NumberFormatException e) {
+                binding.dosageAmountInput.setError("Invalid number");
+                return;
+            }
+
+            if (time.isEmpty() || time.equals("Time")) {
+                Toast.makeText(requireContext(), "Please select a time", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (editingMedicine != null) {
+                Medicine updatedMedicine = new Medicine(editingMedicine.getId(), name, amount, unit, time);
+                viewModel.updateMedicine(updatedMedicine);
+                editingMedicine = null;
+            } else {
+                viewModel.addMedicine(0, name, amount, unit, time);
+            }
+
+            clearInputs();
         });
+
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
-            public boolean onMove(@NonNull RecyclerView recyclerview, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
                 return false;
             }
 
@@ -98,29 +129,32 @@ public class MedicineFragment extends Fragment {
 
         adapter.setOnItemClickListener(medicine -> {
             binding.medicineInput.setText(medicine.getName());
-            binding.dosageInput.setText(medicine.getDosage());
-            binding.timeLabel.setText(medicine.getTime());
 
+            String formattedDosage = medicine.getFormattedDosage();
+            if (formattedDosage != null) {
+                String[] parts = formattedDosage.split(" ");
+                if (parts.length >= 2) {
+                    binding.dosageAmountInput.setText(parts[0]);
+
+                    ArrayAdapter spinnerAdapter = (ArrayAdapter) binding.dosageUnitSpinner.getAdapter();
+                    int position = spinnerAdapter.getPosition(parts[1]);
+                    if (position >= 0) {
+                        binding.dosageUnitSpinner.setSelection(position);
+                    }
+                }
+            }
+
+            binding.timeLabel.setText(medicine.getTime());
             editingMedicine = medicine;
         });
     }
 
-    private void renderMedicines(List<Medicine> medicines) {
-        StringBuilder builder = new StringBuilder();
-        for (Medicine medicine : medicines) {
-            builder.append("• ")
-                    .append(medicine.toString())
-                    .append("\n");
-        }
-    }
-
     private void clearInputs() {
         binding.medicineInput.setText("");
-        binding.dosageInput.setText("");
+        binding.dosageAmountInput.setText("");
+        binding.dosageUnitSpinner.setSelection(0);
         binding.timeLabel.setText("Time");
-
     }
-
 
     @Override
     public void onDestroyView() {

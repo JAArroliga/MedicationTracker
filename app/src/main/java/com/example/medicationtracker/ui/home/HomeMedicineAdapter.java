@@ -85,7 +85,7 @@ public class HomeMedicineAdapter extends RecyclerView.Adapter<HomeMedicineAdapte
 
         public void bind(Medicine medicine, boolean isTaken) {
             name.setText(medicine.getName());
-            details.setText(medicine.getDosage() + " • " + medicine.getTime());
+            details.setText(medicine.getFormattedDosage() + " • " + medicine.getTime());
 
             takenButton.setText(isTaken ? "Taken" : "Mark Taken");
             takenButton.setEnabled(!isTaken);

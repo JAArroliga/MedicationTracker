@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.TakenTable;
 
-@Database(entities = {Medicine.class, TakenTable.class}, version = 2, exportSchema = false)
+@Database(entities = {Medicine.class, TakenTable.class}, version = 3, exportSchema = false)
 public abstract class MedicineDatabase extends RoomDatabase{
 
     private static MedicineDatabase instance;

@@ -9,13 +9,15 @@ public class Medicine {
     @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
-    private String dosage;
+    private double dosageAmount;
+    private String dosageUnit;
     private String time;
 
-    public Medicine(int id, String name, String dosage, String time) {
+    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String time) {
         this.id = id;
         this.name = name;
-        this.dosage = dosage;
+        this.dosageAmount = dosageAmount;
+        this.dosageUnit = dosageUnit;
         this.time = time;
 
     }
@@ -28,8 +30,12 @@ public class Medicine {
         return name;
     }
 
-    public String getDosage() {
-        return dosage;
+    public double getDosageAmount() {
+        return dosageAmount;
+    }
+
+    public String getDosageUnit() {
+        return dosageUnit;
     }
 
     public String getTime() {
@@ -44,17 +50,26 @@ public class Medicine {
         this.name = name;
     }
 
-    public void setDosage(String dosage){
-        this.dosage = dosage;
+    public void setDosageAmount(double dosageAmount) {
+        this.dosageAmount = dosageAmount;
     }
+
+    public void setDosageUnit(String dosageUnit) {
+        this.dosageUnit = dosageUnit;
+    }
+
 
     public void setTime(String time){
         this.time = time;
     }
 
+    public String getFormattedDosage() {
+        return dosageAmount + " " + dosageUnit;
+    }
+
     @NonNull
     @Override
     public String toString() {
-        return name + " - " + dosage + " - " + time;
+        return name + " - " + getFormattedDosage() + " - " + time;
     }
 }

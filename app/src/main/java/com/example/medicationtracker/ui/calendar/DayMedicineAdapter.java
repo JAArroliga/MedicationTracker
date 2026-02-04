@@ -29,7 +29,7 @@ public class DayMedicineAdapter extends RecyclerView.Adapter<DayMedicineAdapter.
     public void onBindViewHolder(@NonNull DayMedicineAdapter.DayMedicineViewHolder holder, int position) {
         DailyMedicationStatus medicine = medicineList.get(position);
         holder.medicineNameTextView.setText(medicine.getMedicine().getName());
-        holder.medicineDosageTextView.setText(medicine.getMedicine().getDosage());
+        holder.medicineDosageTextView.setText(medicine.getMedicine().getFormattedDosage());
         holder.frequencyTextView.setText(medicine.getMedicine().getTime());
         holder.takenTextView.setText(medicine.isTaken() ? "Taken" : "Not Taken");
     }
