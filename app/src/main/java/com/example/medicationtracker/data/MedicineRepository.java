@@ -3,10 +3,12 @@ package com.example.medicationtracker.data;
 import android.app.Application;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.TakenTable;
+import com.example.medicationtracker.ui.calendar.DailyMedicationStatus;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -145,5 +147,40 @@ public class MedicineRepository {
     public boolean hasNoEntriesForDate(LocalDate date) {
         return takenTableDao.getTakenMapForDate(date.toString()).isEmpty();
     }
+
+    public LiveData<List<DailyMedicationStatus>> getDailyMedicineStatus(LocalDate date) {
+
+        MediatorLiveData<List<DailyMedicationStatus>> result = new MediatorLiveData<>();
+
+        LiveData<List<Medicine>> medicinesLive = medicineDao.getAllMedicines();
+
+        LiveData<List<TakenTable>> takenLive =takenTableDao.getTakenForDateLive(date.toString());
+
+        Runnable recompute = () -> {
+            List<Medicine> meds = medicinesLive.getValue();
+            List<TakenTable> taken = takenLive.getValue();
+
+            if (meds == null || taken == null) return;
+
+            Map<Integer, Boolean> takenMap = new HashMap<>();
+            for (TakenTable t : taken) {
+                takenMap.put(t.getMedicineId(), t.isTaken());
+            }
+
+            List<DailyMedicationStatus> list = new ArrayList<>();
+            for (Medicine med : meds) {
+                boolean isTaken = takenMap.getOrDefault(med.getId(), false);
+                list.add(new DailyMedicationStatus(med, isTaken, date));
+            }
+
+            result.setValue(list);
+        };
+
+        result.addSource(medicinesLive, m -> recompute.run());
+        result.addSource(takenLive, t -> recompute.run());
+
+        return result;
+    }
+
 
 }

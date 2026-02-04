@@ -4,11 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
@@ -21,61 +21,33 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 public class CalendarFragment extends Fragment {
 
     private FragmentCalendarBinding binding;
     private CalendarView calendarView;
     private CalendarViewModel calendarViewModel;
+    private DayMedicineAdapter dayMedicineAdapter;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
         binding = FragmentCalendarBinding.inflate(inflater, container, false);
 
         calendarView = binding.calendarView;
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
 
-        calendarViewModel.loadMonthStatus(YearMonth.now());
+        dayMedicineAdapter = new DayMedicineAdapter();
+        binding.medicationPerDayRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        binding.medicationPerDayRecyclerView.setAdapter(dayMedicineAdapter);
+
         observeMonth(YearMonth.now());
         setupMonthChangeListener();
-        setupCalendar();
         setupDayClickListener();
 
+        calendarViewModel.getDailyMedicines().observe(getViewLifecycleOwner(),dayMedicineAdapter::setMedicines);
+
         return binding.getRoot();
-    }
-
-    private void setupCalendar() {
-        YearMonth month = YearMonth.now();
-        LocalDate start = month.atDay(1);
-        LocalDate end = month.atEndOfMonth();
-
-        calendarViewModel.getMonthMedicationStatus(month).observe(getViewLifecycleOwner(), statusMap -> {
-            List<EventDay> events = new ArrayList<>();
-            LocalDate today = LocalDate.now();
-
-            for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
-
-                DayStatus status = statusMap.getOrDefault(current, DayStatus.NO_DATA);
-
-                if (current.isAfter(today)) {
-                    status = DayStatus.NO_DATA;
-                }
-
-                int iconRes = getIconForStatus(status);
-
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(
-                        current.getYear(),
-                        current.getMonthValue() - 1,
-                        current.getDayOfMonth()
-                );
-
-                events.add(new EventDay(calendar, iconRes));
-            }
-
-            calendarView.setEvents(events);
-        });
     }
 
     private void setupDayClickListener() {
@@ -84,9 +56,7 @@ public class CalendarFragment extends Fragment {
 
             LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
 
-            calendarViewModel.getDaySummary(date).observe(getViewLifecycleOwner(), summary -> {
-                Toast.makeText(getContext(), summary, Toast.LENGTH_LONG).show();
-            });
+            calendarViewModel.setSelectedDate(date);
         });
     }
 
@@ -103,7 +73,7 @@ public class CalendarFragment extends Fragment {
     private void reloadCurrentMonth() {
         Calendar calendar = calendarView.getCurrentPageDate();
         YearMonth month = YearMonth.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
-        calendarViewModel.loadMonthStatus(month);
+        calendarViewModel.getMonthMedicationStatus(month);
         observeMonth(month);
     }
 

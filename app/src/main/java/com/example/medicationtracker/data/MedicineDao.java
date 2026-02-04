@@ -26,9 +26,11 @@ public interface MedicineDao {
     @Query("SELECT * FROM medicine_table ORDER BY time ASC")
     LiveData<List<Medicine>> getAllMedicines();
 
+    @Query("SELECT * FROM medicine_table ORDER BY time ASC")
+    List<Medicine> getAllMedicinesList();
+
     @Update
     void update(Medicine medicine);
 
-    @Query("SELECT * FROM medicine_table")
-    List<Medicine> getAllMedicinesList();
+
 }

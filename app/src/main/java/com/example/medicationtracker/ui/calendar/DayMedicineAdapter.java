@@ -8,7 +8,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
 
 import java.util.ArrayList;
@@ -17,7 +16,7 @@ import java.util.List;
 
 public class DayMedicineAdapter extends RecyclerView.Adapter<DayMedicineAdapter.DayMedicineViewHolder> {
 
-    List<Medicine> medicineList = new ArrayList<>();
+    List<DailyMedicationStatus> medicineList = new ArrayList<>();
 
     @NonNull
     @Override
@@ -28,10 +27,11 @@ public class DayMedicineAdapter extends RecyclerView.Adapter<DayMedicineAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull DayMedicineAdapter.DayMedicineViewHolder holder, int position) {
-        Medicine medicine = medicineList.get(position);
-        holder.medicineNameTextView.setText(medicine.getName());
-        holder.medicineDosageTextView.setText(medicine.getDosage());
-        holder.frequencyTextView.setText(medicine.getTime());
+        DailyMedicationStatus medicine = medicineList.get(position);
+        holder.medicineNameTextView.setText(medicine.getMedicine().getName());
+        holder.medicineDosageTextView.setText(medicine.getMedicine().getDosage());
+        holder.frequencyTextView.setText(medicine.getMedicine().getTime());
+        holder.takenTextView.setText(medicine.isTaken() ? "Taken" : "Not Taken");
     }
 
     @Override
@@ -39,7 +39,7 @@ public class DayMedicineAdapter extends RecyclerView.Adapter<DayMedicineAdapter.
         return medicineList.size();
     }
 
-    public void setMedicines(List<Medicine> medicines) {
+    public void setMedicines(List<DailyMedicationStatus> medicines) {
         medicineList = medicines;
         notifyDataSetChanged();
     }

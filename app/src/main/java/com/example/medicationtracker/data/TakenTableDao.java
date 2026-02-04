@@ -1,5 +1,6 @@
 package com.example.medicationtracker.data;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -31,4 +32,8 @@ public interface TakenTableDao {
 
     @Query("SELECT * FROM taken_table WHERE date BETWEEN :startDate AND :endDate")
     List<TakenTable> getTakenMapForDateRange(String startDate, String endDate);
+
+    @Query("SELECT * FROM taken_table WHERE date = :date")
+    LiveData<List<TakenTable>> getTakenForDateLive(String date);
+
 }
