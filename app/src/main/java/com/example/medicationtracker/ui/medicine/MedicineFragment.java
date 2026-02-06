@@ -3,7 +3,10 @@ package com.example.medicationtracker.ui.medicine;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -56,6 +59,12 @@ public class MedicineFragment extends Fragment {
         unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         binding.dosageUnitSpinner.setAdapter(unitAdapter);
 
+        // Medicine type & frequency spinners with placeholders
+        setupSpinnerWithPlaceholder(binding.dosageUnitSpinner, R.array.dosage_units);
+        setupSpinnerWithPlaceholder(binding.medicineTypeSpinner, R.array.medicine_types);
+        setupSpinnerWithPlaceholder(binding.frequencySpinner, R.array.medicine_frequencies);
+
+
         binding.timeButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -77,6 +86,9 @@ public class MedicineFragment extends Fragment {
             String amountText = binding.dosageAmountInput.getText().toString().trim();
             String unit = binding.dosageUnitSpinner.getSelectedItem().toString();
             String time = binding.timeLabel.getText().toString().trim();
+            String type = binding.medicineTypeSpinner.getSelectedItem().toString();
+            String frequency = binding.frequencySpinner.getSelectedItem().toString();
+
 
             if (name.isEmpty()) {
                 binding.medicineInput.setError("Required");
@@ -102,11 +114,29 @@ public class MedicineFragment extends Fragment {
             }
 
             if (editingMedicine != null) {
-                Medicine updatedMedicine = new Medicine(editingMedicine.getId(), name, amount, unit, time);
+                Medicine updatedMedicine = new Medicine(
+                        editingMedicine.getId(),
+                        name,
+                        amount,
+                        unit,
+                        type,
+                        frequency,
+                        time
+                );
+
                 viewModel.updateMedicine(updatedMedicine);
                 editingMedicine = null;
             } else {
-                viewModel.addMedicine(0, name, amount, unit, time);
+                viewModel.addMedicine(
+                        0,
+                        name,
+                        amount,
+                        unit,
+                        type,
+                        frequency,
+                        time
+                );
+
             }
 
             clearInputs();
@@ -145,15 +175,64 @@ public class MedicineFragment extends Fragment {
             }
 
             binding.timeLabel.setText(medicine.getTime());
+
+            ArrayAdapter typeSpinnerAdapter =
+                    (ArrayAdapter) binding.medicineTypeSpinner.getAdapter();
+            int typePosition = typeSpinnerAdapter.getPosition(medicine.getType());
+            if (typePosition >= 0) {
+                binding.medicineTypeSpinner.setSelection(typePosition);
+            }
+
+            ArrayAdapter frequencySpinnerAdapter =
+                    (ArrayAdapter) binding.frequencySpinner.getAdapter();
+            int frequencyPosition = frequencySpinnerAdapter.getPosition(medicine.getFrequency());
+            if (frequencyPosition >= 0) {
+                binding.frequencySpinner.setSelection(frequencyPosition);
+            }
+
+
             editingMedicine = medicine;
         });
     }
+
+    private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                getResources().getTextArray(arrayRes)
+        ) {
+            @Override
+            public boolean isEnabled(int position) {
+                // Disable the first item (placeholder)
+                return position != 0;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (position == 0) {
+                    // Gray out the first item
+                    ((TextView) view).setTextColor(0xFF888888);
+                } else {
+                    ((TextView) view).setTextColor(0xFF000000);
+                }
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(0); // default to placeholder
+    }
+
 
     private void clearInputs() {
         binding.medicineInput.setText("");
         binding.dosageAmountInput.setText("");
         binding.dosageUnitSpinner.setSelection(0);
+        binding.medicineTypeSpinner.setSelection(0);
+        binding.frequencySpinner.setSelection(0);
         binding.timeLabel.setText("Time");
+        editingMedicine = null;
     }
 
     @Override

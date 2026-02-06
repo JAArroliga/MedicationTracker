@@ -30,10 +30,19 @@ public class MedicineViewModel extends AndroidViewModel {
         return allMedicines;
     }
 
-    public void addMedicine(int id, String name, double dosageAmount, String dosageUnit, String time) {
-        Medicine medicine = new Medicine(id, name, dosageAmount, dosageUnit, time);
+    public void addMedicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, String time) {
+        Medicine medicine = new Medicine(
+                id,
+                name,
+                dosageAmount,
+                dosageUnit,
+                type,
+                frequency,
+                time
+        );
         repository.insert(medicine);
     }
+
 
     public void updateMedicine(Medicine medicine) {
         repository.update(medicine);

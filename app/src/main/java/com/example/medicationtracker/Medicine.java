@@ -13,11 +13,16 @@ public class Medicine {
     private String dosageUnit;
     private String time;
 
-    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String time) {
+    private String type; // "pill" or "syringe"
+    private String frequency; // "daily", "weekly", etc.
+
+    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, String time) {
         this.id = id;
         this.name = name;
         this.dosageAmount = dosageAmount;
         this.dosageUnit = dosageUnit;
+        this.type = type;
+        this.frequency = frequency;
         this.time = time;
 
     }
@@ -42,6 +47,14 @@ public class Medicine {
         return time;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
     public void setId(int id){
         this.id = id;
     }
@@ -63,6 +76,15 @@ public class Medicine {
         this.time = time;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+
     public String getFormattedDosage() {
         return dosageAmount + " " + dosageUnit;
     }
@@ -72,4 +94,6 @@ public class Medicine {
     public String toString() {
         return name + " - " + getFormattedDosage() + " - " + time;
     }
+
+
 }

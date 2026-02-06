@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="dosage_units">
+        <item>Units</item>
         <item>mg</item>
         <item>ml</item>
         <item>pill</item>
@@ -10,6 +11,5 @@
         <item>capsule</item>
         <item>capsules</item>
         <item>drops</item>
-        <item>units</item>
     </string-array>
 </resources>
