@@ -23,10 +23,10 @@ public interface MedicineDao {
     @Query("DELETE FROM medicine_table")
     void deleteAll();
 
-    @Query("SELECT * FROM medicine_table ORDER BY time ASC")
+    @Query("SELECT * FROM medicine_table")
     LiveData<List<Medicine>> getAllMedicines();
 
-    @Query("SELECT * FROM medicine_table ORDER BY time ASC")
+    @Query("SELECT * FROM medicine_table")
     List<Medicine> getAllMedicinesList();
 
     @Update

@@ -50,8 +50,7 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
     @Override
     public void onBindViewHolder(@NonNull MedicineViewHolder holder, int position) {
-        Medicine medicine = medicines.get(position);
-        holder.bind(medicine);
+        holder.bind(medicines.get(position));
     }
 
     @Override
@@ -63,11 +62,13 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
         private final TextView name;
         private final TextView details;
+        private final TextView times;
 
         public MedicineViewHolder(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.medicineName);
             details = itemView.findViewById(R.id.medicineDetails);
+            times = itemView.findViewById(R.id.medicineTimes);
 
             // Click listener for editing
             itemView.setOnClickListener(v -> {
@@ -84,12 +85,18 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             String detailsText =
                     medicine.getFormattedDosage()
                             + " • " + medicine.getType()
-                            + " • " + medicine.getFrequency()
-                            + " • " + medicine.getTime();
+                            + " • " + medicine.getFrequency();
 
             details.setText(detailsText);
-        }
 
+            List<String> timesList = medicine.getTimes();
+            if (timesList != null && !timesList.isEmpty()) {
+                times.setText("⏰ " + String.join(", ", timesList));
+                times.setVisibility(View.VISIBLE);
+            } else {
+                times.setVisibility(View.GONE);
+            }
+        }
 
     }
 }

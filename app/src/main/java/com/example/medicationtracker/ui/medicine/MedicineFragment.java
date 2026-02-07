@@ -2,6 +2,7 @@ package com.example.medicationtracker.ui.medicine;
 
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -22,8 +23,10 @@ import com.example.medicationtracker.databinding.FragmentMedicineBinding;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.ArrayList;
 
 public class MedicineFragment extends Fragment {
 
@@ -31,7 +34,7 @@ public class MedicineFragment extends Fragment {
     private MedicineViewModel viewModel;
     private MedicineAdapter adapter;
     private Medicine editingMedicine = null;
-    private String selectedTime = "";
+    private final List<String> selectedTimes = new ArrayList<>();
 
     public MedicineFragment() {
         super(R.layout.fragment_medicine);
@@ -64,20 +67,29 @@ public class MedicineFragment extends Fragment {
         setupSpinnerWithPlaceholder(binding.medicineTypeSpinner, R.array.medicine_types);
         setupSpinnerWithPlaceholder(binding.frequencySpinner, R.array.medicine_frequencies);
 
-
         binding.timeButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int hour = calendar.get(Calendar.HOUR_OF_DAY);
             int minute = calendar.get(Calendar.MINUTE);
 
-            TimePickerDialog timePickerDialog = new TimePickerDialog(requireContext(), (timePickerView, hourOfDay, minute1) -> {
-                Calendar c = Calendar.getInstance();
-                c.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                c.set(Calendar.MINUTE, minute1);
-                SimpleDateFormat format = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-                selectedTime = format.format(c.getTime());
-                binding.timeLabel.setText(selectedTime);
-            }, hour, minute, false);
+            TimePickerDialog timePickerDialog =
+                    new TimePickerDialog(requireContext(), (view1, hourOfDay, minute1) -> {
+
+                        Calendar c = Calendar.getInstance();
+                        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        c.set(Calendar.MINUTE, minute1);
+
+                        SimpleDateFormat format =
+                                new SimpleDateFormat("hh:mm a", Locale.getDefault());
+
+                        String time = format.format(c.getTime());
+
+                        if (!selectedTimes.contains(time)) {
+                            selectedTimes.add(time);
+                        }
+
+                    }, hour, minute, false);
+
             timePickerDialog.show();
         });
 
@@ -85,10 +97,8 @@ public class MedicineFragment extends Fragment {
             String name = binding.medicineInput.getText().toString().trim();
             String amountText = binding.dosageAmountInput.getText().toString().trim();
             String unit = binding.dosageUnitSpinner.getSelectedItem().toString();
-            String time = binding.timeLabel.getText().toString().trim();
             String type = binding.medicineTypeSpinner.getSelectedItem().toString();
             String frequency = binding.frequencySpinner.getSelectedItem().toString();
-
 
             if (name.isEmpty()) {
                 binding.medicineInput.setError("Required");
@@ -108,8 +118,10 @@ public class MedicineFragment extends Fragment {
                 return;
             }
 
-            if (time.isEmpty() || time.equals("Time")) {
-                Toast.makeText(requireContext(), "Please select a time", Toast.LENGTH_SHORT).show();
+            if (selectedTimes.isEmpty()) {
+                Toast.makeText(requireContext(),
+                        "Please add at least one time",
+                        Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -121,9 +133,8 @@ public class MedicineFragment extends Fragment {
                         unit,
                         type,
                         frequency,
-                        time
+                        new ArrayList<>(selectedTimes)
                 );
-
                 viewModel.updateMedicine(updatedMedicine);
                 editingMedicine = null;
             } else {
@@ -134,14 +145,12 @@ public class MedicineFragment extends Fragment {
                         unit,
                         type,
                         frequency,
-                        time
+                        new ArrayList<>(selectedTimes)
                 );
-
             }
 
             clearInputs();
         });
-
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -174,7 +183,8 @@ public class MedicineFragment extends Fragment {
                 }
             }
 
-            binding.timeLabel.setText(medicine.getTime());
+            selectedTimes.clear();
+            selectedTimes.addAll(medicine.getTimes());
 
             ArrayAdapter typeSpinnerAdapter =
                     (ArrayAdapter) binding.medicineTypeSpinner.getAdapter();
@@ -189,7 +199,6 @@ public class MedicineFragment extends Fragment {
             if (frequencyPosition >= 0) {
                 binding.frequencySpinner.setSelection(frequencyPosition);
             }
-
 
             editingMedicine = medicine;
         });
@@ -231,7 +240,8 @@ public class MedicineFragment extends Fragment {
         binding.dosageUnitSpinner.setSelection(0);
         binding.medicineTypeSpinner.setSelection(0);
         binding.frequencySpinner.setSelection(0);
-        binding.timeLabel.setText("Time");
+        selectedTimes.clear();
+        binding.timesContainer.removeAllViews();
         editingMedicine = null;
     }
 
@@ -240,4 +250,27 @@ public class MedicineFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
+
+    private void renderTimes() {
+        binding.timesContainer.removeAllViews();
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+
+        for (String time : selectedTimes) {
+            View chip = inflater.inflate(R.layout.item_time_chip, binding.timesContainer, false);
+
+            TextView timeText = chip.findViewById(R.id.timeText);
+            View remove = chip.findViewById(R.id.removeTime);
+
+            timeText.setText(time);
+
+            remove.setOnClickListener(v -> {
+                selectedTimes.remove(time);
+                renderTimes();
+            });
+
+            binding.timesContainer.addView(chip);
+        }
+    }
+
 }

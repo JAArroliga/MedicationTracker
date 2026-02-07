@@ -9,6 +9,8 @@ import androidx.lifecycle.LiveData;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.data.MedicineRepository;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MedicineViewModel extends AndroidViewModel {
@@ -31,18 +33,20 @@ public class MedicineViewModel extends AndroidViewModel {
     }
 
     public void addMedicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, String time) {
-        Medicine medicine = new Medicine(
-                id,
-                name,
-                dosageAmount,
-                dosageUnit,
-                type,
-                frequency,
-                time
-        );
+        List<String> times = new ArrayList<>();
+        times.add(time);
+        Collections.sort(times);
+
+        Medicine medicine = new Medicine(id, name, dosageAmount, dosageUnit, type, frequency, times);
+
         repository.insert(medicine);
     }
 
+    public void addMedicine(int id,String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times) {
+        Medicine medicine = new Medicine(id, name, dosageAmount, dosageUnit, type, frequency, times);
+
+        repository.insert(medicine);
+    }
 
     public void updateMedicine(Medicine medicine) {
         repository.update(medicine);

@@ -5,11 +5,14 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
 
+import com.example.medicationtracker.Converters;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.TakenTable;
 
 @Database(entities = {Medicine.class, TakenTable.class}, version = 3, exportSchema = false)
+@TypeConverters({Converters.class})
 public abstract class MedicineDatabase extends RoomDatabase{
 
     private static MedicineDatabase instance;

@@ -60,14 +60,20 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"/>
 
-        <TextView
-            android:id="@+id/timeLabel"
+        <!-- Selected Times -->
+        <HorizontalScrollView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Time"
-            android:textSize="16sp"
-            android:gravity="center"/>
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/timesContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"/>
+        </HorizontalScrollView>
+
 
         <Button
             android:id="@+id/timeButton"

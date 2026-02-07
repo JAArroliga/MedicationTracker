@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.List;
+
+
 @Entity(tableName = "medicine_table")
 public class Medicine {
     @PrimaryKey(autoGenerate = true)
@@ -11,19 +14,19 @@ public class Medicine {
     private String name;
     private double dosageAmount;
     private String dosageUnit;
-    private String time;
+    private List<String> times;
 
     private String type; // "pill" or "syringe"
     private String frequency; // "daily", "weekly", etc.
 
-    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, String time) {
+    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times) {
         this.id = id;
         this.name = name;
         this.dosageAmount = dosageAmount;
         this.dosageUnit = dosageUnit;
         this.type = type;
         this.frequency = frequency;
-        this.time = time;
+        this.times = times;
 
     }
 
@@ -43,8 +46,8 @@ public class Medicine {
         return dosageUnit;
     }
 
-    public String getTime() {
-        return time;
+    public List<String> getTimes() {
+        return times;
     }
 
     public String getType() {
@@ -72,8 +75,8 @@ public class Medicine {
     }
 
 
-    public void setTime(String time){
-        this.time = time;
+    public void setTimes(List<String> times){
+        this.times = times;
     }
 
     public void setType(String type) {
@@ -92,8 +95,14 @@ public class Medicine {
     @NonNull
     @Override
     public String toString() {
-        return name + " - " + getFormattedDosage() + " - " + time;
+        return name + " - " + getFormattedDosage() + " - " + times;
     }
+
+    public String getFormattedTimes() {
+        if (times == null || times.isEmpty()) return "No time set";
+        return String.join(", ", times);
+    }
+
 
 
 }
