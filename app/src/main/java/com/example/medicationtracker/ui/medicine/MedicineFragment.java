@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -67,6 +68,19 @@ public class MedicineFragment extends Fragment {
         setupSpinnerWithPlaceholder(binding.medicineTypeSpinner, R.array.medicine_types);
         setupSpinnerWithPlaceholder(binding.frequencySpinner, R.array.medicine_frequencies);
 
+        binding.frequencySpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        String frequency = parent.getItemAtPosition(position).toString();
+                        onFrequencyChanged(frequency);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                }
+        );
+
         binding.timeButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -84,9 +98,20 @@ public class MedicineFragment extends Fragment {
 
                         String time = format.format(c.getTime());
 
-                        if (!selectedTimes.contains(time)) {
+                        String frequency = binding.frequencySpinner.getSelectedItem().toString();
+
+                        if (frequency.equalsIgnoreCase("Once daily")) {
+                            selectedTimes.clear();
                             selectedTimes.add(time);
+                        } else {
+                            if (!selectedTimes.contains(time)) {
+                                selectedTimes.add(time);
+                            }
                         }
+
+                        Collections.sort(selectedTimes);
+                        renderTimes();
+
 
                     }, hour, minute, false);
 
@@ -124,6 +149,21 @@ public class MedicineFragment extends Fragment {
                         Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            if (frequency.equalsIgnoreCase("Once daily") && selectedTimes.size() != 1) {
+                Toast.makeText(requireContext(),
+                        "Once-daily medicines must have exactly one time",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (frequency.equalsIgnoreCase("Multiple times per day") && selectedTimes.size() < 2) {
+                Toast.makeText(requireContext(),
+                        "Please add at least two times",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
 
             if (editingMedicine != null) {
                 Medicine updatedMedicine = new Medicine(
@@ -185,6 +225,7 @@ public class MedicineFragment extends Fragment {
 
             selectedTimes.clear();
             selectedTimes.addAll(medicine.getTimes());
+            renderTimes();
 
             ArrayAdapter typeSpinnerAdapter =
                     (ArrayAdapter) binding.medicineTypeSpinner.getAdapter();
@@ -202,6 +243,19 @@ public class MedicineFragment extends Fragment {
 
             editingMedicine = medicine;
         });
+
+        binding.frequencySpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        String frequency = parent.getItemAtPosition(position).toString();
+                        onFrequencyChanged(frequency);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                }
+        );
     }
 
     private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
@@ -249,6 +303,24 @@ public class MedicineFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    private void onFrequencyChanged(String frequency) {
+        boolean onceDaily = frequency.equalsIgnoreCase("Once daily");
+
+        if (onceDaily && selectedTimes.size() > 1) {
+            Collections.sort(selectedTimes);
+
+            String keptTime = selectedTimes.get(0);
+            selectedTimes.clear();
+            selectedTimes.add(keptTime);
+
+            renderTimes();
+
+            Toast.makeText(requireContext(),
+                    "Extra times removed for once-daily medicine",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void renderTimes() {
