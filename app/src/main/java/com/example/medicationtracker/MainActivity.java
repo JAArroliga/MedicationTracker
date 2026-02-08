@@ -1,11 +1,13 @@
 package com.example.medicationtracker;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -42,14 +44,25 @@ public class MainActivity extends AppCompatActivity {
 
         binding.fabDynamic.setOnClickListener(v -> {
             int currentDest = navController.getCurrentDestination().getId();
+
+            NavOptions navOptions = new NavOptions.Builder()
+                    .setPopUpTo(R.id.mobile_navigation, true)
+                    .setLaunchSingleTop(true)
+                    .build();
+
             if (currentDest == R.id.nav_home) {
-                navController.navigate(R.id.nav_medicine);
+                navController.navigate(R.id.nav_medicine, null, navOptions);
             } else {
-                navController.navigate(R.id.nav_home);
+                navController.navigate(R.id.nav_home, null, navOptions);
             }
         });
 
+
+
+
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            binding.navView.setCheckedItem(destination.getId());
+
             if (destination.getId() == R.id.nav_home) {
                 binding.fabDynamic.setImageResource(R.drawable.ic_menu_medicine_icon);
             } else {

@@ -45,13 +45,12 @@
             android:layout_marginStart="8dp"/>
     </LinearLayout>
 
-    <!-- Row 3: Frequency | Time Label | Time Button -->
+    <!-- Row 3A: Frequency | Time Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:weightSum="3"
         android:layout_marginBottom="8dp">
 
         <Spinner
@@ -60,28 +59,28 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"/>
 
-        <!-- Selected Times -->
-        <HorizontalScrollView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fillViewport="true">
-
-            <LinearLayout
-                android:id="@+id/timesContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"/>
-        </HorizontalScrollView>
-
-
         <Button
             android:id="@+id/timeButton"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="Select Time"/>
     </LinearLayout>
+
+    <!-- Row 3B: Selected Times (full width, below) -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:id="@+id/timesContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+    </HorizontalScrollView>
+
 
     <!-- Days of week (optional, scrollable) -->
     <HorizontalScrollView
