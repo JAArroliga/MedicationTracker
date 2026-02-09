@@ -191,19 +191,14 @@ public class MedicineFragment extends Fragment {
     }
 
     private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item,
-                getResources().getTextArray(arrayRes)) {
-            @Override
-            public boolean isEnabled(int position) { return position != 0; }
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent) {
-                View view = super.getDropDownView(position, convertView, parent);
-                ((TextView)view).setTextColor(position == 0 ? 0xFF888888 : 0xFF000000);
-                return view;
-            }
-        };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<CharSequence> adapter =
+                new ArrayAdapter<>(
+                        requireContext(),
+                        R.layout.spinner_item,
+                        getResources().getTextArray(arrayRes)
+                );
+
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         spinner.setAdapter(adapter);
         spinner.setSelection(0);
     }
