@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
 
@@ -16,29 +17,25 @@ import java.util.List;
 
 public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.MedicineViewHolder> {
 
-    private List<Medicine> medicines = new ArrayList<>();
+    private List<MedicineWithDoses> items = new ArrayList<>();
+
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
-        void onItemClick(Medicine medicine);
+        void onItemClick(MedicineWithDoses item);
     }
 
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
     }
 
-    public void setMedicines(List<Medicine> medicines) {
-        this.medicines = medicines;
+    public void submitList(List<MedicineWithDoses> newItems) {
+        items = newItems;
         notifyDataSetChanged();
     }
 
-    public Medicine getMedicineAt(int position) {
-        return medicines.get(position);
-    }
-
-    public void submitList(List<Medicine> newMedicines) {
-        medicines = newMedicines;
-        notifyDataSetChanged();
+    public MedicineWithDoses getItemAt(int position) {
+        return items.get(position);
     }
 
     @NonNull
@@ -50,12 +47,12 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
     @Override
     public void onBindViewHolder(@NonNull MedicineViewHolder holder, int position) {
-        holder.bind(medicines.get(position));
+        holder.bind(items.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return medicines.size();
+        return items.size();
     }
 
     public class MedicineViewHolder extends RecyclerView.ViewHolder {
@@ -74,12 +71,15 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
-                    listener.onItemClick(medicines.get(position));
+                    listener.onItemClick(items.get(position));
                 }
             });
         }
 
-        void bind(Medicine medicine) {
+        void bind(MedicineWithDoses item) {
+            Medicine medicine = item.medicine;
+            List<Dose> doses = item.doses;
+
             name.setText(medicine.getName());
 
             String detailsText =
@@ -89,8 +89,11 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
 
             details.setText(detailsText);
 
-            List<String> timesList = medicine.getTimes();
-            if (timesList != null && !timesList.isEmpty()) {
+            if (doses != null && !doses.isEmpty()) {
+                List<String> timesList = new ArrayList<>();
+                for (Dose dose : doses) {
+                    timesList.add(dose.getTime());
+                }
                 times.setText("⏰ " + String.join(", ", timesList));
                 times.setVisibility(View.VISIBLE);
             } else {

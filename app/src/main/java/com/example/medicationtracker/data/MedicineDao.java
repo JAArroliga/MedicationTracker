@@ -5,9 +5,11 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.ui.medicine.MedicineWithDoses;
 
 import java.util.List;
 
@@ -15,7 +17,7 @@ import java.util.List;
 public interface MedicineDao {
 
     @Insert
-    void insert(Medicine medicine);
+    long insert(Medicine medicine);
 
     @Delete
     void delete(Medicine medicine);
@@ -27,10 +29,14 @@ public interface MedicineDao {
     LiveData<List<Medicine>> getAllMedicines();
 
     @Query("SELECT * FROM medicine_table")
-    List<Medicine> getAllMedicinesList();
+    LiveData<List<Medicine>> getAllMedicinesList();
 
     @Update
     void update(Medicine medicine);
+
+    @Transaction
+    @Query("SELECT * FROM medicine_table")
+    LiveData<List<MedicineWithDoses>> getMedicinesWithDoses();
 
 
 }

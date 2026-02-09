@@ -46,7 +46,9 @@ public class CalendarFragment extends Fragment {
         setupMonthChangeListener();
         setupDayClickListener();
 
-        calendarViewModel.getDailyMedicines().observe(getViewLifecycleOwner(),dayMedicineAdapter::setMedicines);
+        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), list -> {
+            dayMedicineAdapter.setMedicines(list);
+        });
 
         return binding.getRoot();
     }

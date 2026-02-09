@@ -2,6 +2,8 @@ package com.example.medicationtracker;
 
 import androidx.room.TypeConverter;
 
+import com.example.medicationtracker.data.DoseStatus;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,4 +25,15 @@ public class Converters {
         }
         return new ArrayList<>(Arrays.asList(data.split(",")));
     }
+
+    @TypeConverter
+    public static String fromDoseStatus(DoseStatus status) {
+        return status.name();
+    }
+
+    @TypeConverter
+    public static DoseStatus toDoseStatus(String value) {
+        return DoseStatus.valueOf(value);
+    }
+
 }

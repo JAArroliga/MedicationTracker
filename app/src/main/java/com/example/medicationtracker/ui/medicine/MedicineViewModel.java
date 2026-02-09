@@ -15,46 +15,30 @@ import java.util.List;
 
 public class MedicineViewModel extends AndroidViewModel {
 
-    private MedicineRepository repository;
-    private LiveData<List<Medicine>> allMedicines;
+    private final MedicineRepository repository;
+    private final LiveData<List<MedicineWithDoses>> medicinesWithDoses;
 
     public MedicineViewModel(@NonNull Application application) {
         super(application);
         repository = new MedicineRepository(application);
-        allMedicines = repository.getAllMedicines();
+        medicinesWithDoses = repository.getMedicinesWithDoses();
     }
 
-    public void insert(Medicine medicine) {
-        repository.insert(medicine);
+    public LiveData<List<MedicineWithDoses>> getMedicinesWithDoses() {
+        return medicinesWithDoses;
     }
 
-    public LiveData<List<Medicine>> getAllMedicines() {
-        return allMedicines;
+    public void addMedicine(String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times) {
+        Medicine medicine = new Medicine(0, name, dosageAmount, dosageUnit, type, frequency);
+        repository.insertMedicineWithDoses(medicine, times);
     }
 
-    public void addMedicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, String time) {
-        List<String> times = new ArrayList<>();
-        times.add(time);
-        Collections.sort(times);
-
-        Medicine medicine = new Medicine(id, name, dosageAmount, dosageUnit, type, frequency, times);
-
-        repository.insert(medicine);
+    public void updateMedicine(Medicine medicine, List<String> times) {
+        repository.updateMedicineWithDoses(medicine, times);
     }
-
-    public void addMedicine(int id,String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times) {
-        Medicine medicine = new Medicine(id, name, dosageAmount, dosageUnit, type, frequency, times);
-
-        repository.insert(medicine);
-    }
-
-    public void updateMedicine(Medicine medicine) {
-        repository.update(medicine);
-    }
-
 
     public void deleteMedicine(Medicine medicine) {
         repository.delete(medicine);
     }
-
 }
+

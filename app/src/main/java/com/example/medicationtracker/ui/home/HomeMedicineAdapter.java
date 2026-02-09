@@ -1,6 +1,5 @@
 package com.example.medicationtracker.ui.home;
 
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -9,100 +8,73 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
+import com.example.medicationtracker.data.DailyDoseStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class HomeMedicineAdapter extends RecyclerView.Adapter<HomeMedicineAdapter.ViewHolder> {
 
-    private List<Medicine> medicines = new ArrayList<>();
-    private Map<Integer, Boolean> takenMap;
-    private OnTakeClickListener takeClickListener;
-    private OnUndoClickListener undoClickListener;
+    private List<DailyDoseStatus> items = new ArrayList<>();
 
-
-    public interface OnTakeClickListener {
-        void onTakeClick(Medicine medicine);
+    interface OnDoseActionListener {
+        void onTake(DailyDoseStatus item);
+        void onUndo(DailyDoseStatus item);
     }
 
-    public interface OnUndoClickListener {
-        void onUndoClick(Medicine medicine);
+    private OnDoseActionListener listener;
+
+    public void setListener(OnDoseActionListener listener) {
+        this.listener = listener;
     }
 
-    public void setOnTakeClickListener(OnTakeClickListener listener) {
-        this.takeClickListener = listener;
-    }
-
-    public void setOnUndoClickListener(OnUndoClickListener listener) {
-        this.undoClickListener = listener;
-    }
-
-
-    public void submitList(List<Medicine> medicines, Map<Integer, Boolean> takenMap) {
-        this.medicines = medicines != null ? medicines : new ArrayList<>();
-        this.takenMap = takenMap;
+    public void submitList(List<DailyDoseStatus> list) {
+        items = list != null ? list : new ArrayList<>();
         notifyDataSetChanged();
     }
-
-
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_home_medicine, parent, false);
-        return new ViewHolder(view);
+        return null;
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Medicine medicine = medicines.get(position);
-        holder.bind(medicine, takenMap != null && Boolean.TRUE.equals(takenMap.get(medicine.getId())));
+        holder.bind(items.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return medicines.size();
+        return items.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView name;
-        private final TextView details;
-        private final Button takenButton;
-        private final Button undoButton;
+        TextView name, details;
+        Button take, undo;
 
-        public ViewHolder(@NonNull View itemView) {
-            super(itemView);
-            name = itemView.findViewById(R.id.medicineName);
-            details = itemView.findViewById(R.id.medicineDetails);
-            takenButton = itemView.findViewById(R.id.takenButton);
-            undoButton = itemView.findViewById(R.id.undoButton);
+        ViewHolder(View v) {
+            super(v);
+            name = v.findViewById(R.id.medicineName);
+            details = v.findViewById(R.id.medicineDetails);
+            take = v.findViewById(R.id.takenButton);
+            undo = v.findViewById(R.id.undoButton);
         }
 
-        public void bind(Medicine medicine, boolean isTaken) {
-            name.setText(medicine.getName());
-            details.setText(medicine.getFormattedDosage() + " • " + medicine.getFormattedTimes());
+        void bind(DailyDoseStatus item) {
+            name.setText(item.getMedicine().getName());
+            details.setText(item.getMedicine().getFormattedDosage() + " • " + item.getDose().getTime());
 
-            takenButton.setText(isTaken ? "Taken" : "Mark Taken");
-            takenButton.setEnabled(!isTaken);
+            boolean taken = item.isTaken();
 
-            undoButton.setVisibility(isTaken ? View.VISIBLE : View.GONE);
+            take.setEnabled(!taken);
+            undo.setVisibility(taken ? View.VISIBLE : View.GONE);
 
-            takenButton.setOnClickListener(v -> {
-                if (takeClickListener != null) {
-                    takeClickListener.onTakeClick(medicine);
-                }
-            });
-
-            undoButton.setOnClickListener(v -> {
-                if (undoClickListener != null) {
-                    undoClickListener.onUndoClick(medicine);
-                }
-            });
+            take.setOnClickListener(v -> listener.onTake(item));
+            undo.setOnClickListener(v -> listener.onUndo(item));
         }
     }
 }
+

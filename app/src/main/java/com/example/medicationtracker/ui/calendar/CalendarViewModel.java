@@ -8,6 +8,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Transformations;
 
+import com.example.medicationtracker.data.DailyDoseStatus;
 import com.example.medicationtracker.data.DayStatus;
 import com.example.medicationtracker.data.MedicineRepository;
 
@@ -20,14 +21,12 @@ public class CalendarViewModel extends AndroidViewModel {
 
     private MedicineRepository medicineRepository;
     private final MutableLiveData<LocalDate> selectedDate = new MutableLiveData<>();
-
-    private final LiveData<List<DailyMedicationStatus>> dailyMedicines =
-            Transformations.switchMap(selectedDate, date -> {
-                if (date == null) {
-                    return new MutableLiveData<>(List.of());
-                }
-                return medicineRepository.getDailyMedicineStatus(date);
-            });
+    private final LiveData<List<DailyDoseStatus>> dailyDoses = Transformations.switchMap(selectedDate, date -> {
+        if (date == null) {
+            return new MutableLiveData<>(List.of());
+        }
+        return medicineRepository.getDailyDoseStatus(date);
+    });
 
     public CalendarViewModel(@NonNull Application application) {
         super(application);
@@ -42,8 +41,8 @@ public class CalendarViewModel extends AndroidViewModel {
         return medicineRepository.getMedicationStatusMap(month);
     }
 
-    public LiveData<List<DailyMedicationStatus>> getDailyMedicines() {
-        return dailyMedicines;
+    public LiveData<List<DailyDoseStatus>> getDailyDoses() {
+        return dailyDoses;
     }
 
 }

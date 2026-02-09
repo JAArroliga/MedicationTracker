@@ -8,8 +8,11 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.data.DailyDoseStatus;
+import com.example.medicationtracker.data.DoseStatus;
 import com.example.medicationtracker.data.MedicineRepository;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,30 +20,31 @@ import java.util.Map;
 public class HomeViewModel extends AndroidViewModel {
 
     private final MedicineRepository repository;
-    private final LiveData<List<Medicine>> medicines;
-    private final LiveData<Map<Integer, Boolean>> takenMap;
+    private final LiveData<List<DailyDoseStatus>> todayDoses;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
         repository = new MedicineRepository(application);
-        medicines = repository.getAllMedicines();
-        takenMap = repository.getTakenMapForToday();
+        todayDoses = repository.getDailyDoseStatus(LocalDate.now());
     }
 
-    public LiveData<List<Medicine>> getMedicines() {
-        return medicines;
+    public LiveData<List<DailyDoseStatus>> getTodayDoses() {
+        return todayDoses;
     }
 
-    public LiveData<Map<Integer, Boolean>> getTakenMap() {
-        return takenMap;
+    public void markTaken(DailyDoseStatus dose) {
+        repository.markDoseTaken(
+                dose.getDose().getId(),
+                LocalDate.now(),
+                DoseStatus.TAKEN
+        );
     }
 
-    public void markTaken(int medicineId) {
-        repository.markTaken(medicineId, true);
+    public void undoTaken(DailyDoseStatus dose) {
+        repository.markDoseTaken(
+                dose.getDose().getId(),
+                LocalDate.now(),
+                DoseStatus.PENDING
+        );
     }
-
-    public void undoTaken(int medicineId) {
-        repository.markTaken(medicineId, false);
-    }
-
 }
