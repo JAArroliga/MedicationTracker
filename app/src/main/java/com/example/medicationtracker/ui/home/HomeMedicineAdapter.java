@@ -1,5 +1,6 @@
 package com.example.medicationtracker.ui.home;
 
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -37,7 +38,8 @@ public class HomeMedicineAdapter extends RecyclerView.Adapter<HomeMedicineAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return null;
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_home_medicine, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
