@@ -3,9 +3,11 @@ package com.example.medicationtracker;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 
 import com.google.android.material.navigation.NavigationView;
 
+import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
@@ -57,9 +59,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-
-
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             binding.navView.setCheckedItem(destination.getId());
 
@@ -69,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
                 binding.fabDynamic.setImageResource(R.drawable.ic_menu_home_icon);
             }
         });
-
 
     }
 
@@ -86,4 +84,20 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_settings) {
+
+            NavController navController =
+                    Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+
+            navController.navigate(R.id.navigation_settings);
+
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 }
