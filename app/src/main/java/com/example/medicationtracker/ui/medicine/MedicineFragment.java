@@ -34,13 +34,20 @@ import java.util.Locale;
 
 public class MedicineFragment extends Fragment {
 
+    // Binding and ViewModel
     private FragmentMedicineBinding binding;
     private MedicineViewModel viewModel;
+
+    // Adapter and currently editing medicine
     private MedicineAdapter adapter;
     private Medicine editingMedicine = null;
+
+    // Times selected for doses
     private final List<String> selectedTimes = new ArrayList<>();
 
-    private CheckBox mondayCheckBox, tuesdayCheckBox, wednesdayCheckBox, thursdayCheckBox, fridayCheckBox, saturdayCheckBox, sundayCheckBox;
+    // Checkboxes for days of week
+    private CheckBox mondayCheckBox, tuesdayCheckBox, wednesdayCheckBox,
+            thursdayCheckBox, fridayCheckBox, saturdayCheckBox, sundayCheckBox;
     private HorizontalScrollView daysOfWeekScroll;
 
     public MedicineFragment() {
@@ -53,21 +60,45 @@ public class MedicineFragment extends Fragment {
 
         binding = FragmentMedicineBinding.bind(view);
         viewModel = new ViewModelProvider(this).get(MedicineViewModel.class);
+
+        // Setup adapter and RecyclerView
         adapter = new MedicineAdapter();
-
         viewModel.getMedicinesWithDoses().observe(getViewLifecycleOwner(), adapter::submitList);
-
         binding.medicineRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.medicineRecyclerView.setAdapter(adapter);
 
+        // Setup UI components
         setupSpinners();
-
+        setupDayCheckboxes(view);
         binding.timeButton.setOnClickListener(v -> showTimePicker());
-
         binding.addMedicineButton.setOnClickListener(v -> addOrUpdateMedicine());
-
         setupSwipeToDelete();
 
+        // Adapter click
+        adapter.setOnItemClickListener(this::editMedicine);
+    }
+
+    // ======================== UI SETUP ========================
+    private void setupSpinners() {
+        setupSpinnerWithPlaceholder(binding.dosageUnitSpinner, R.array.dosage_units);
+        setupSpinnerWithPlaceholder(binding.medicineTypeSpinner, R.array.medicine_types);
+        setupSpinnerWithPlaceholder(binding.frequencySpinner, R.array.medicine_frequencies);
+
+        binding.frequencySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selected = parent.getItemAtPosition(position).toString();
+                updateDaysOfWeekVisibility(selected);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                updateDaysOfWeekVisibility("");
+            }
+        });
+    }
+
+    private void setupDayCheckboxes(View view) {
         daysOfWeekScroll = view.findViewById(R.id.daysOfWeekScroll);
 
         mondayCheckBox = view.findViewById(R.id.checkMon);
@@ -77,55 +108,33 @@ public class MedicineFragment extends Fragment {
         fridayCheckBox = view.findViewById(R.id.checkFri);
         saturdayCheckBox = view.findViewById(R.id.checkSat);
         sundayCheckBox = view.findViewById(R.id.checkSun);
-
-        adapter.setOnItemClickListener(this::editMedicine);
     }
 
-    private void setupSpinners() {
-        setupSpinnerWithPlaceholder(binding.dosageUnitSpinner, R.array.dosage_units);
-        setupSpinnerWithPlaceholder(binding.medicineTypeSpinner, R.array.medicine_types);
-        setupSpinnerWithPlaceholder(binding.frequencySpinner, R.array.medicine_frequencies);
-
-        binding.frequencySpinner.setOnItemSelectedListener(
-                new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        String frequency = parent.getItemAtPosition(position).toString();
-                        onFrequencyChanged(frequency);
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {}
-                }
-        );
+    private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
+        ArrayAdapter<CharSequence> adapter =
+                new ArrayAdapter<>(requireContext(), R.layout.spinner_item, getResources().getTextArray(arrayRes));
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(0);
     }
 
-    private void showTimePicker() {
-        Calendar calendar = Calendar.getInstance();
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-        int minute = calendar.get(Calendar.MINUTE);
+    private void setupSwipeToDelete() {
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) { return false; }
 
-        new TimePickerDialog(requireContext(), (view, hourOfDay, minute1) -> {
-            Calendar c = Calendar.getInstance();
-            c.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            c.set(Calendar.MINUTE, minute1);
-
-            String time = new SimpleDateFormat("hh:mm a", Locale.getDefault())
-                    .format(c.getTime());
-
-            String frequency = binding.frequencySpinner.getSelectedItem().toString();
-
-            if (frequency.equalsIgnoreCase("Once daily")) {
-                selectedTimes.clear();
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                MedicineWithDoses item = adapter.getItemAt(viewHolder.getAdapterPosition());
+                viewModel.deleteMedicine(item.medicine);
+                Toast.makeText(requireContext(), "Medicine deleted", Toast.LENGTH_SHORT).show();
             }
-            if (!selectedTimes.contains(time)) selectedTimes.add(time);
-
-            Collections.sort(selectedTimes);
-            renderTimes();
-
-        }, hour, minute, false).show();
+        }).attachToRecyclerView(binding.medicineRecyclerView);
     }
 
+    // ======================== MEDICINE CRUD ========================
     private void addOrUpdateMedicine() {
         String name = binding.medicineInput.getText().toString().trim();
         String amountText = binding.dosageAmountInput.getText().toString().trim();
@@ -154,15 +163,19 @@ public class MedicineFragment extends Fragment {
             return;
         }
 
-        int daysMask = buildDaysOfWeekMask();
-        if (!frequency.equalsIgnoreCase("Once daily") && daysMask == 0) {
-            Toast.makeText(requireContext(),
-                    "Please select at least one day",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
+        int daysMask;
 
-        daysMask = buildDaysOfWeekMask();
+        if ("Specific days of week".equalsIgnoreCase(frequency)) {
+            daysMask = buildDaysOfWeekMask();
+            if (daysMask == 0) {
+                Toast.makeText(requireContext(), "Please select at least one day", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } else {
+            // Daily medications automatically include all days
+            daysMask = 0b1111111;
+            resetDayCheckboxes();
+        }
 
         if (editingMedicine != null) {
             viewModel.updateMedicine(editingMedicine, frequency, new ArrayList<>(selectedTimes), daysMask);
@@ -174,39 +187,16 @@ public class MedicineFragment extends Fragment {
         clearInputs();
     }
 
-    private void setupSwipeToDelete() {
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView,
-                                  @NonNull RecyclerView.ViewHolder viewHolder,
-                                  @NonNull RecyclerView.ViewHolder target) { return false; }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                MedicineWithDoses item = adapter.getItemAt(viewHolder.getAdapterPosition());
-                viewModel.deleteMedicine(item.medicine);
-                Toast.makeText(requireContext(), "Medicine deleted", Toast.LENGTH_SHORT).show();
-            }
-        }).attachToRecyclerView(binding.medicineRecyclerView);
-    }
-
     private void editMedicine(MedicineWithDoses item) {
         Medicine medicine = item.medicine;
 
         binding.medicineInput.setText(medicine.getName());
         binding.dosageAmountInput.setText(String.valueOf(medicine.getDosageAmount()));
 
-        ArrayAdapter unitAdapter = (ArrayAdapter) binding.dosageUnitSpinner.getAdapter();
-        int unitPos = unitAdapter.getPosition(medicine.getDosageUnit());
-        if (unitPos >= 0) binding.dosageUnitSpinner.setSelection(unitPos);
-
-        ArrayAdapter typeAdapter = (ArrayAdapter) binding.medicineTypeSpinner.getAdapter();
-        int typePos = typeAdapter.getPosition(medicine.getType());
-        if (typePos >= 0) binding.medicineTypeSpinner.setSelection(typePos);
-
-        ArrayAdapter freqAdapter = (ArrayAdapter) binding.frequencySpinner.getAdapter();
-        int freqPos = freqAdapter.getPosition(medicine.getFrequency());
-        if (freqPos >= 0) binding.frequencySpinner.setSelection(freqPos);
+        // Restore spinner selections
+        setSpinnerSelection(binding.dosageUnitSpinner, medicine.getDosageUnit());
+        setSpinnerSelection(binding.medicineTypeSpinner, medicine.getType());
+        setSpinnerSelection(binding.frequencySpinner, medicine.getFrequency());
 
         selectedTimes.clear();
         for (Dose dose : item.doses) {
@@ -215,31 +205,46 @@ public class MedicineFragment extends Fragment {
         Collections.sort(selectedTimes);
         renderTimes();
 
-        int mask = medicine.getDaysOfWeekMask();
-
-        sundayCheckBox.setChecked((mask & (1 << 0)) != 0);
-        mondayCheckBox.setChecked((mask & (1 << 1)) != 0);
-        tuesdayCheckBox.setChecked((mask & (1 << 2)) != 0);
-        wednesdayCheckBox.setChecked((mask & (1 << 3)) != 0);
-        thursdayCheckBox.setChecked((mask & (1 << 4)) != 0);
-        fridayCheckBox.setChecked((mask & (1 << 5)) != 0);
-        saturdayCheckBox.setChecked((mask & (1 << 6)) != 0);
-
         editingMedicine = medicine;
-        onFrequencyChanged(medicine.getFrequency());
+
+        if ("Specific days of week".equalsIgnoreCase(medicine.getFrequency())) {
+            int mask = medicine.getDaysOfWeekMask();
+            sundayCheckBox.setChecked((mask & (1 << 0)) != 0);
+            mondayCheckBox.setChecked((mask & (1 << 1)) != 0);
+            tuesdayCheckBox.setChecked((mask & (1 << 2)) != 0);
+            wednesdayCheckBox.setChecked((mask & (1 << 3)) != 0);
+            thursdayCheckBox.setChecked((mask & (1 << 4)) != 0);
+            fridayCheckBox.setChecked((mask & (1 << 5)) != 0);
+            saturdayCheckBox.setChecked((mask & (1 << 6)) != 0);
+        } else {
+            resetDayCheckboxes();
+        }
+
+        updateDaysOfWeekVisibility(medicine.getFrequency());
     }
 
-    private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
-        ArrayAdapter<CharSequence> adapter =
-                new ArrayAdapter<>(
-                        requireContext(),
-                        R.layout.spinner_item,
-                        getResources().getTextArray(arrayRes)
-                );
+    // ======================== TIME PICKER ========================
+    private void showTimePicker() {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
 
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        spinner.setSelection(0);
+        new TimePickerDialog(requireContext(), (view, hourOfDay, minute1) -> {
+            Calendar c = Calendar.getInstance();
+            c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            c.set(Calendar.MINUTE, minute1);
+
+            String time = new SimpleDateFormat("hh:mm a", Locale.getDefault())
+                    .format(c.getTime());
+
+            String frequency = binding.frequencySpinner.getSelectedItem().toString();
+            if (frequency.equalsIgnoreCase("Once daily")) selectedTimes.clear();
+
+            if (!selectedTimes.contains(time)) selectedTimes.add(time);
+            Collections.sort(selectedTimes);
+            renderTimes();
+
+        }, hour, minute, false).show();
     }
 
     private void renderTimes() {
@@ -260,6 +265,39 @@ public class MedicineFragment extends Fragment {
         }
     }
 
+    // ======================== CHECKBOX HELPERS ========================
+    private int buildDaysOfWeekMask() {
+        int mask = 0;
+        if (mondayCheckBox.isChecked()) mask |= 1 << 1;
+        if (tuesdayCheckBox.isChecked()) mask |= 1 << 2;
+        if (wednesdayCheckBox.isChecked()) mask |= 1 << 3;
+        if (thursdayCheckBox.isChecked()) mask |= 1 << 4;
+        if (fridayCheckBox.isChecked()) mask |= 1 << 5;
+        if (saturdayCheckBox.isChecked()) mask |= 1 << 6;
+        if (sundayCheckBox.isChecked()) mask |= 1 << 0;
+        return mask;
+    }
+
+    private void resetDayCheckboxes() {
+        mondayCheckBox.setChecked(false);
+        tuesdayCheckBox.setChecked(false);
+        wednesdayCheckBox.setChecked(false);
+        thursdayCheckBox.setChecked(false);
+        fridayCheckBox.setChecked(false);
+        saturdayCheckBox.setChecked(false);
+        sundayCheckBox.setChecked(false);
+    }
+
+    private void updateDaysOfWeekVisibility(String frequency) {
+        if ("Specific days of week".equalsIgnoreCase(frequency)) {
+            daysOfWeekScroll.setVisibility(View.VISIBLE);
+        } else {
+            daysOfWeekScroll.setVisibility(View.GONE);
+            resetDayCheckboxes();
+        }
+    }
+
+    // ======================== UTIL ========================
     private void clearInputs() {
         binding.medicineInput.setText("");
         binding.dosageAmountInput.setText("");
@@ -268,64 +306,15 @@ public class MedicineFragment extends Fragment {
         binding.frequencySpinner.setSelection(0);
         selectedTimes.clear();
         binding.timesContainer.removeAllViews();
-
-        // RESET WEEKDAY CHECKBOXES
-        for (int i = 0; i < binding.daysOfWeekLayout.getChildCount(); i++) {
-            View v = binding.daysOfWeekLayout.getChildAt(i);
-            if (v instanceof CheckBox) ((CheckBox) v).setChecked(false);
-        }
-
+        resetDayCheckboxes();
         editingMedicine = null;
     }
 
-    private void onFrequencyChanged(String frequency) {
-        if (frequency.equalsIgnoreCase("Once daily")) {
-
-            if (selectedTimes.size() > 1) {
-                Collections.sort(selectedTimes);
-                String keptTime = selectedTimes.get(0);
-                selectedTimes.clear();
-                selectedTimes.add(keptTime);
-                renderTimes();
-
-                Toast.makeText(requireContext(),
-                        "Extra times removed for once-daily medicine",
-                        Toast.LENGTH_SHORT).show();
-            }
-
-            checkAllDays(true);
-            binding.daysOfWeekScroll.setVisibility(View.GONE);
-
-        } else {
-            binding.daysOfWeekScroll.setVisibility(View.VISIBLE);
-            checkAllDays(false);
-        }
+    private void setSpinnerSelection(Spinner spinner, String value) {
+        ArrayAdapter adapter = (ArrayAdapter) spinner.getAdapter();
+        int pos = adapter.getPosition(value);
+        if (pos >= 0) spinner.setSelection(pos);
     }
-
-    private int buildDaysOfWeekMask() {
-        int mask = 0;
-
-        if (mondayCheckBox.isChecked()) mask |= 1 << 1;
-        if (tuesdayCheckBox.isChecked()) mask |= 1 << 2;
-        if (wednesdayCheckBox.isChecked()) mask |= 1 << 3;
-        if (thursdayCheckBox.isChecked()) mask |= 1 << 4;
-        if (fridayCheckBox.isChecked()) mask |= 1 << 5;
-        if (saturdayCheckBox.isChecked()) mask |= 1 << 6;
-        if (sundayCheckBox.isChecked()) mask |= 1 << 0;
-
-        return mask;
-    }
-
-    private void checkAllDays(boolean checked) {
-        mondayCheckBox.setChecked(checked);
-        tuesdayCheckBox.setChecked(checked);
-        wednesdayCheckBox.setChecked(checked);
-        thursdayCheckBox.setChecked(checked);
-        fridayCheckBox.setChecked(checked);
-        saturdayCheckBox.setChecked(checked);
-        sundayCheckBox.setChecked(checked);
-    }
-
 
     @Override
     public void onDestroyView() {
@@ -333,4 +322,5 @@ public class MedicineFragment extends Fragment {
         binding = null;
     }
 }
+
 

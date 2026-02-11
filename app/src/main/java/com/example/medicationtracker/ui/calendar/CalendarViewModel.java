@@ -19,23 +19,33 @@ import java.util.Map;
 
 public class CalendarViewModel extends AndroidViewModel {
 
-    private MedicineRepository medicineRepository;
+    private final MedicineRepository medicineRepository;
     private final MutableLiveData<LocalDate> selectedDate = new MutableLiveData<>();
-    private final LiveData<List<DailyDoseStatus>> dailyDoses = Transformations.switchMap(selectedDate, date -> {
-        if (date == null) {
-            return new MutableLiveData<>(List.of());
-        }
-        return medicineRepository.getDailyDoseStatus(date);
-    });
-    private final LiveData<Boolean> hasNoEntries = Transformations.switchMap(selectedDate, date -> {
-        if (date == null) return new MutableLiveData<>(true);
-        return medicineRepository.hasNoEntriesForDate(date);
-    });
+    private final LiveData<List<DailyDoseStatus>> dailyDoses;
+    private final LiveData<Boolean> hasNoEntries;
+    private final MutableLiveData<YearMonth> selectedMonth = new MutableLiveData<>();
+    private final LiveData<Map<LocalDate, DayStatus>> monthStatus;
 
     public CalendarViewModel(@NonNull Application application) {
         super(application);
         medicineRepository = new MedicineRepository(application);
+
+        dailyDoses = Transformations.switchMap(selectedDate, date -> {
+            if (date == null) {
+                return new MutableLiveData<>(List.of());
+            }
+            return medicineRepository.getDailyDoseStatus(date);
+        });
+
+        hasNoEntries = Transformations.switchMap(selectedDate, date -> {
+            if (date == null) return new MutableLiveData<>(true);
+            return medicineRepository.hasNoEntriesForDate(date);
+        });
+
+        monthStatus = Transformations.switchMap(selectedMonth, medicineRepository::getMedicationStatusMap);
+
         selectedDate.setValue(LocalDate.now());
+        selectedMonth.setValue(YearMonth.now());
     }
 
     public void setSelectedDate(LocalDate date) {
@@ -45,10 +55,6 @@ public class CalendarViewModel extends AndroidViewModel {
     public LiveData<List<DailyDoseStatus>> getDailyDoses() {
         return dailyDoses;
     }
-
-    private final MutableLiveData<YearMonth> selectedMonth = new MutableLiveData<>();
-
-    private final LiveData<Map<LocalDate, DayStatus>> monthStatus = Transformations.switchMap(selectedMonth, medicineRepository::getMedicationStatusMap);
 
     public void setSelectedMonth(YearMonth month) {
         selectedMonth.setValue(month);

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
+import com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException;
 import com.example.medicationtracker.R;
 import com.example.medicationtracker.data.DayStatus;
 import com.example.medicationtracker.databinding.FragmentCalendarBinding;
@@ -30,6 +31,7 @@ public class CalendarFragment extends Fragment {
     private CalendarViewModel calendarViewModel;
     private DayMedicineAdapter dayMedicineAdapter;
     private YearMonth currentMonth;
+    private LocalDate selectedDate;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -87,12 +89,24 @@ public class CalendarFragment extends Fragment {
         calendarView.setOnDayClickListener(eventDay -> {
             Calendar clicked = eventDay.getCalendar();
 
-            LocalDate date = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
+            selectedDate = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
 
-            calendarViewModel.setSelectedDate(date);
+            calendarViewModel.setSelectedDate(selectedDate);
 
             String formattedDate = String.format("%02d/%02d/%04d", clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH), clicked.get(Calendar.YEAR));
             binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
+
+            int currentMonth = calendarView.getCurrentPageDate().get(Calendar.MONTH);
+            int clickedMonth = clicked.get(Calendar.MONTH);
+
+            if (currentMonth == clickedMonth) {
+                try {
+                    calendarView.setDate(clicked);
+                } catch (com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException e) {
+                    e.printStackTrace();
+                }
+            }
+
         });
     }
 
@@ -136,10 +150,26 @@ public class CalendarFragment extends Fragment {
 
             Calendar c = Calendar.getInstance();
             c.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
-            events.add(new EventDay(c, getIconForStatus(status)));
+
+            if (selectedDate != null  && selectedDate.equals(current)) {
+                events.add(new EventDay(c, R.drawable.ic_selected_dot));
+            } else {
+                events.add(new EventDay(c, getIconForStatus(status)));
+            }
         }
 
         calendarView.setEvents(events);
+
+        if (selectedDate != null) {
+            Calendar selectedCal = Calendar.getInstance();
+            selectedCal.set(selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
+
+            try {
+                calendarView.setDate(selectedCal);
+            } catch (com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public int getIconForStatus(DayStatus status) {
