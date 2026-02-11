@@ -85,7 +85,7 @@ public class MedicineAdapter extends RecyclerView.Adapter<MedicineAdapter.Medici
             String detailsText =
                     medicine.getFormattedDosage()
                             + " • " + medicine.getType()
-                            + " • " + medicine.getFrequency();
+                            + " • " + medicine.getFrequencyDisplayText();
 
             details.setText(detailsText);
 

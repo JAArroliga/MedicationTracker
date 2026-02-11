@@ -67,7 +67,11 @@ public class HomeMedicineAdapter extends RecyclerView.Adapter<HomeMedicineAdapte
 
         void bind(DailyDoseStatus item) {
             name.setText(item.getMedicine().getName());
-            details.setText(item.getMedicine().getFormattedDosage() + " • " + item.getDose().getTime());
+            String dosage = item.getMedicine().getFormattedDosage();
+            String days = item.getMedicine().getFrequencyDisplayText();
+            String time = item.getDose().getTime();
+
+            details.setText(dosage + " • " + days + " • " + time);
 
             boolean taken = item.isTaken();
 

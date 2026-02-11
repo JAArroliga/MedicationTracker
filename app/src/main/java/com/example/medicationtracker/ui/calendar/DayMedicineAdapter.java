@@ -48,8 +48,13 @@ public class DayMedicineAdapter extends RecyclerView.Adapter<DayMedicineAdapter.
             holder.medicineDosageTextView.setText("-");
         }
 
-        if (item.getDose() != null) {
-            holder.frequencyTextView.setText(item.getDose().getTime());
+        if (item.getDose() != null && item.getMedicine() != null) {
+
+            String days = item.getMedicine().getFrequencyDisplayText();
+            String time = item.getDose().getTime();
+
+            holder.frequencyTextView.setText(days + " • " + time);
+
         } else {
             holder.frequencyTextView.setText("-");
         }

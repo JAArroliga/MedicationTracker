@@ -322,5 +322,3 @@ public class MedicineFragment extends Fragment {
         binding = null;
     }
 }
-
-

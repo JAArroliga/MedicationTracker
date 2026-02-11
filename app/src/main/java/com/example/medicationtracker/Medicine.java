@@ -112,4 +112,28 @@ public class Medicine {
     private static int bitForDay(DayOfWeek day) {
         return 1 << (day.getValue() % 7);
     }
+
+    public String getFrequencyDisplayText() {
+        if (daysOfWeekMask == 127) {
+            return "Every day";
+        }
+
+        String[] shortNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < 7; i++) {
+            if ((daysOfWeekMask & (1 << i)) != 0) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                builder.append(shortNames[i]);
+            }
+        }
+
+        if (builder.length() == 0) {
+            return "No days selected";
+        }
+
+        return builder.toString();
+    }
 }
