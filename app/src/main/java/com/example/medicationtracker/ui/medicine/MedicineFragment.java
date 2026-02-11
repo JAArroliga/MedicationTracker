@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.HorizontalScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,6 +40,9 @@ public class MedicineFragment extends Fragment {
     private Medicine editingMedicine = null;
     private final List<String> selectedTimes = new ArrayList<>();
 
+    private CheckBox mondayCheckBox, tuesdayCheckBox, wednesdayCheckBox, thursdayCheckBox, fridayCheckBox, saturdayCheckBox, sundayCheckBox;
+    private HorizontalScrollView daysOfWeekScroll;
+
     public MedicineFragment() {
         super(R.layout.fragment_medicine);
     }
@@ -50,7 +55,6 @@ public class MedicineFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(MedicineViewModel.class);
         adapter = new MedicineAdapter();
 
-        // Observe Medicines with Doses
         viewModel.getMedicinesWithDoses().observe(getViewLifecycleOwner(), adapter::submitList);
 
         binding.medicineRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -63,6 +67,16 @@ public class MedicineFragment extends Fragment {
         binding.addMedicineButton.setOnClickListener(v -> addOrUpdateMedicine());
 
         setupSwipeToDelete();
+
+        daysOfWeekScroll = view.findViewById(R.id.daysOfWeekScroll);
+
+        mondayCheckBox = view.findViewById(R.id.checkMon);
+        tuesdayCheckBox = view.findViewById(R.id.checkTue);
+        wednesdayCheckBox = view.findViewById(R.id.checkWed);
+        thursdayCheckBox = view.findViewById(R.id.checkThu);
+        fridayCheckBox = view.findViewById(R.id.checkFri);
+        saturdayCheckBox = view.findViewById(R.id.checkSat);
+        sundayCheckBox = view.findViewById(R.id.checkSun);
 
         adapter.setOnItemClickListener(this::editMedicine);
     }
@@ -119,28 +133,42 @@ public class MedicineFragment extends Fragment {
         String type = binding.medicineTypeSpinner.getSelectedItem().toString();
         String frequency = binding.frequencySpinner.getSelectedItem().toString();
 
-        if (name.isEmpty()) { binding.medicineInput.setError("Required"); return; }
-        if (amountText.isEmpty()) { binding.dosageAmountInput.setError("Required"); return; }
+        if (name.isEmpty()) {
+            binding.medicineInput.setError("Required");
+            return;
+        }
+        if (amountText.isEmpty()) {
+            binding.dosageAmountInput.setError("Required");
+            return;
+        }
         if (selectedTimes.isEmpty()) {
             Toast.makeText(requireContext(), "Please add at least one time", Toast.LENGTH_SHORT).show();
             return;
         }
 
         double amount;
-        try { amount = Double.parseDouble(amountText); }
-        catch (NumberFormatException e) { binding.dosageAmountInput.setError("Invalid number"); return; }
-
-        if (frequency.equalsIgnoreCase("Once daily") && selectedTimes.size() != 1) {
-            Toast.makeText(requireContext(),
-                    "Once-daily medicines must have exactly one time", Toast.LENGTH_SHORT).show();
+        try {
+            amount = Double.parseDouble(amountText);
+        } catch (NumberFormatException e) {
+            binding.dosageAmountInput.setError("Invalid number");
             return;
         }
 
+        int daysMask = buildDaysOfWeekMask();
+        if (!frequency.equalsIgnoreCase("Once daily") && daysMask == 0) {
+            Toast.makeText(requireContext(),
+                    "Please select at least one day",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        daysMask = buildDaysOfWeekMask();
+
         if (editingMedicine != null) {
-            viewModel.updateMedicine(editingMedicine, new ArrayList<>(selectedTimes));
+            viewModel.updateMedicine(editingMedicine, frequency, new ArrayList<>(selectedTimes), daysMask);
             editingMedicine = null;
         } else {
-            viewModel.addMedicine(name, amount, unit, type, frequency, new ArrayList<>(selectedTimes));
+            viewModel.addMedicine(name, amount, unit, type, frequency, new ArrayList<>(selectedTimes), daysMask);
         }
 
         clearInputs();
@@ -187,7 +215,18 @@ public class MedicineFragment extends Fragment {
         Collections.sort(selectedTimes);
         renderTimes();
 
+        int mask = medicine.getDaysOfWeekMask();
+
+        sundayCheckBox.setChecked((mask & (1 << 0)) != 0);
+        mondayCheckBox.setChecked((mask & (1 << 1)) != 0);
+        tuesdayCheckBox.setChecked((mask & (1 << 2)) != 0);
+        wednesdayCheckBox.setChecked((mask & (1 << 3)) != 0);
+        thursdayCheckBox.setChecked((mask & (1 << 4)) != 0);
+        fridayCheckBox.setChecked((mask & (1 << 5)) != 0);
+        saturdayCheckBox.setChecked((mask & (1 << 6)) != 0);
+
         editingMedicine = medicine;
+        onFrequencyChanged(medicine.getFrequency());
     }
 
     private void setupSpinnerWithPlaceholder(Spinner spinner, int arrayRes) {
@@ -229,20 +268,64 @@ public class MedicineFragment extends Fragment {
         binding.frequencySpinner.setSelection(0);
         selectedTimes.clear();
         binding.timesContainer.removeAllViews();
+
+        // RESET WEEKDAY CHECKBOXES
+        for (int i = 0; i < binding.daysOfWeekLayout.getChildCount(); i++) {
+            View v = binding.daysOfWeekLayout.getChildAt(i);
+            if (v instanceof CheckBox) ((CheckBox) v).setChecked(false);
+        }
+
         editingMedicine = null;
     }
 
     private void onFrequencyChanged(String frequency) {
-        if (frequency.equalsIgnoreCase("Once daily") && selectedTimes.size() > 1) {
-            Collections.sort(selectedTimes);
-            String keptTime = selectedTimes.get(0);
-            selectedTimes.clear();
-            selectedTimes.add(keptTime);
-            renderTimes();
-            Toast.makeText(requireContext(),
-                    "Extra times removed for once-daily medicine", Toast.LENGTH_SHORT).show();
+        if (frequency.equalsIgnoreCase("Once daily")) {
+
+            if (selectedTimes.size() > 1) {
+                Collections.sort(selectedTimes);
+                String keptTime = selectedTimes.get(0);
+                selectedTimes.clear();
+                selectedTimes.add(keptTime);
+                renderTimes();
+
+                Toast.makeText(requireContext(),
+                        "Extra times removed for once-daily medicine",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            checkAllDays(true);
+            binding.daysOfWeekScroll.setVisibility(View.GONE);
+
+        } else {
+            binding.daysOfWeekScroll.setVisibility(View.VISIBLE);
+            checkAllDays(false);
         }
     }
+
+    private int buildDaysOfWeekMask() {
+        int mask = 0;
+
+        if (mondayCheckBox.isChecked()) mask |= 1 << 1;
+        if (tuesdayCheckBox.isChecked()) mask |= 1 << 2;
+        if (wednesdayCheckBox.isChecked()) mask |= 1 << 3;
+        if (thursdayCheckBox.isChecked()) mask |= 1 << 4;
+        if (fridayCheckBox.isChecked()) mask |= 1 << 5;
+        if (saturdayCheckBox.isChecked()) mask |= 1 << 6;
+        if (sundayCheckBox.isChecked()) mask |= 1 << 0;
+
+        return mask;
+    }
+
+    private void checkAllDays(boolean checked) {
+        mondayCheckBox.setChecked(checked);
+        tuesdayCheckBox.setChecked(checked);
+        wednesdayCheckBox.setChecked(checked);
+        thursdayCheckBox.setChecked(checked);
+        fridayCheckBox.setChecked(checked);
+        saturdayCheckBox.setChecked(checked);
+        sundayCheckBox.setChecked(checked);
+    }
+
 
     @Override
     public void onDestroyView() {

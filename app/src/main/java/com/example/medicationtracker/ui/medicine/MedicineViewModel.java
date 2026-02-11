@@ -28,17 +28,28 @@ public class MedicineViewModel extends AndroidViewModel {
         return medicinesWithDoses;
     }
 
-    public void addMedicine(String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times) {
-        Medicine medicine = new Medicine(0, name, dosageAmount, dosageUnit, type, frequency);
+    public void addMedicine(String name, double dosageAmount, String dosageUnit, String type, String frequency, List<String> times, int daysOfWeekMask) {
+        List<String> normalizedTimes = normalizeTimes(frequency, times);
+        Medicine medicine = new Medicine(0, name, dosageAmount, dosageUnit, type, frequency, daysOfWeekMask);
         repository.insertMedicineWithDoses(medicine, times);
     }
 
-    public void updateMedicine(Medicine medicine, List<String> times) {
-        repository.updateMedicineWithDoses(medicine, times);
+    public void updateMedicine(Medicine medicine,String frequency, List<String> times, int daysOfWeekMask) {
+        medicine.setFrequency(frequency);
+        medicine.setDaysOfWeekMask(daysOfWeekMask);
+        repository.updateMedicineWithDoses(medicine, normalizeTimes(frequency, times));
     }
 
     public void deleteMedicine(Medicine medicine) {
         repository.delete(medicine);
+    }
+
+    private List<String> normalizeTimes(String frequency, List<String> times) {
+        if (frequency.equalsIgnoreCase("Once daily") && times.size() > 1) {
+            Collections.sort(times);
+            return new ArrayList<>(Collections.singletonList(times.get(0)));
+        }
+        return times;
     }
 }
 

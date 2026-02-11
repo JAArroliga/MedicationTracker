@@ -4,6 +4,11 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 
+/**
+ * Represents a time-of-day for a medicine.
+ * A Dose does NOT imply a specific date or day of week.
+ * Applicability is determined by the parent Medicine.
+ */
 @Entity(tableName = "dose_table", foreignKeys = @ForeignKey(entity = Medicine.class, parentColumns = "id", childColumns = "medicineId", onDelete = ForeignKey.CASCADE))
 public class Dose {
 

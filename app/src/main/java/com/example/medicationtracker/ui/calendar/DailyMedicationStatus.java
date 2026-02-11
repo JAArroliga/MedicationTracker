@@ -1,31 +1,33 @@
 package com.example.medicationtracker.ui.calendar;
 
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.data.DayStatus;
 
 import java.time.LocalDate;
 
 public class DailyMedicationStatus {
 
     private final Medicine medicine;
-    private final boolean taken;
+    private final DayStatus status;
     private final LocalDate date;
 
-    public DailyMedicationStatus(Medicine medicine, boolean taken, LocalDate date) {
+    public DailyMedicationStatus(Medicine medicine, DayStatus status, LocalDate date) {
         this.medicine = medicine;
-        this.taken = taken;
+        this.status = status;
         this.date = date;
 
     }
 
-    public Medicine getMedicine() {
-        return medicine;
+    public boolean isAllTaken() {
+        return status == DayStatus.ALL_TAKEN;
     }
 
-    public boolean isTaken() {
-        return taken;
+    public boolean isPartial() {
+        return status == DayStatus.PARTIAL;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public boolean isNoneTaken() {
+        return status == DayStatus.NONE;
     }
+
 }

@@ -31,18 +31,28 @@ public class CalendarViewModel extends AndroidViewModel {
     public CalendarViewModel(@NonNull Application application) {
         super(application);
         medicineRepository = new MedicineRepository(application);
+        selectedDate.setValue(LocalDate.now());
     }
 
     public void setSelectedDate(LocalDate date) {
         selectedDate.setValue(date);
     }
 
-    public LiveData<Map<LocalDate, DayStatus>> getMonthMedicationStatus(YearMonth month) {
-        return medicineRepository.getMedicationStatusMap(month);
-    }
-
     public LiveData<List<DailyDoseStatus>> getDailyDoses() {
         return dailyDoses;
     }
+
+    private final MutableLiveData<YearMonth> selectedMonth = new MutableLiveData<>();
+
+    private final LiveData<Map<LocalDate, DayStatus>> monthStatus = Transformations.switchMap(selectedMonth, medicineRepository::getMedicationStatusMap);
+
+    public void setSelectedMonth(YearMonth month) {
+        selectedMonth.setValue(month);
+    }
+
+    public LiveData<Map<LocalDate, DayStatus>> getMonthStatus() {
+        return monthStatus;
+    }
+
 
 }

@@ -72,29 +72,53 @@ public class MedicineRepository {
 
     public LiveData<List<DailyMedicationStatus>> getDailyMedicineStatus(LocalDate date) {
         MediatorLiveData<List<DailyMedicationStatus>> result = new MediatorLiveData<>();
-        LiveData<List<Medicine>> medicinesLive = medicineDao.getAllMedicines();
-        LiveData<List<TakenTable>> takenLive = takenTableDao.getTakenForDateLive(date.toString());
+
+        LiveData<List<MedicineWithDoses>> medicinesLive = medicineDao.getMedicinesWithDoses();
+        LiveData<List<DoseTaken>> takenLive = doseTakenDao.getTakenForDateLive(date.toString());
 
         Runnable recompute = () -> {
-            List<Medicine> medicines = medicinesLive.getValue();
-            List<TakenTable> taken = takenLive.getValue();
-            if (medicines == null || taken == null) return;
+            List<MedicineWithDoses> medicines = medicinesLive.getValue();
+            List<DoseTaken> taken = takenLive.getValue();
 
-            Map<Integer, Boolean> takenMap = new HashMap<>();
-            for (TakenTable t : taken) {
-                takenMap.put(t.getMedicineId(), t.isTaken());
+            if (medicines == null) return;
+
+            Map<Integer, DoseStatus> takenMap = new HashMap<>();
+            if (taken != null) {
+                for (DoseTaken dt : taken) {
+                    takenMap.put(dt.getDoseId(), dt.getStatus());
+                }
             }
 
             List<DailyMedicationStatus> list = new ArrayList<>();
-            for (Medicine med : medicines) {
-                boolean isTaken = takenMap.getOrDefault(med.getId(), false);
-                list.add(new DailyMedicationStatus(med, isTaken, date));
+
+            for (MedicineWithDoses mwd : medicines) {
+                Medicine med = mwd.medicine;
+
+                if (!med.appliesOn(date)) continue;
+
+                int expected = mwd.doses.size();
+                int takenCount = 0;
+
+                for (Dose dose : mwd.doses) {
+                    if (takenMap.getOrDefault(dose.getId(), DoseStatus.PENDING) == DoseStatus.TAKEN) {
+                        takenCount++;
+                    }
+                }
+
+                DayStatus status;
+                if (takenCount == 0) status = DayStatus.NONE;
+                else if (takenCount < expected) status = DayStatus.PARTIAL;
+                else status = DayStatus.ALL_TAKEN;
+
+                list.add(new DailyMedicationStatus(med, status, date));
             }
+
             result.setValue(list);
         };
 
         result.addSource(medicinesLive, m -> recompute.run());
         result.addSource(takenLive, t -> recompute.run());
+
         return result;
     }
 
@@ -131,15 +155,12 @@ public class MedicineRepository {
             for (MedicineWithDoses mwd : medicines) {
                 Medicine med = mwd.medicine;
 
-                for (Dose dose : mwd.doses) {
-                    DoseStatus status =
-                            takenMap.getOrDefault(dose.getId(), DoseStatus.PENDING);
+                if (!med.appliesOn(date)) continue;
 
-                    list.add(new DailyDoseStatus(
-                            med,
-                            dose,
-                            status == DoseStatus.TAKEN
-                    ));
+                for (Dose dose : mwd.doses) {
+                    DoseStatus status = takenMap.getOrDefault(dose.getId(), DoseStatus.PENDING);
+
+                    list.add(new DailyDoseStatus(med, dose, status == DoseStatus.TAKEN));
                 }
             }
 
@@ -152,41 +173,81 @@ public class MedicineRepository {
         return result;
     }
 
-    public LiveData<List<Dose>> getAllExpectedDoses() {
-        return doseDao.getAllDosesLive();
+    public LiveData<Integer> getExpectedDoseCountForDate(LocalDate date) {
+        MediatorLiveData<Integer> result = new MediatorLiveData<>();
+
+        LiveData<List<MedicineWithDoses>> medsLive = medicineDao.getMedicinesWithDoses();
+
+        Runnable recompute = () -> {
+            List<MedicineWithDoses> meds = medsLive.getValue();
+            if (meds == null) return;
+
+            int count = 0;
+            for (MedicineWithDoses mwd : meds) {
+                if (!mwd.medicine.appliesOn(date)) continue;
+                count += mwd.doses.size();
+            }
+            result.setValue(count);
+        };
+
+        result.addSource(medsLive, m -> recompute.run());
+        return result;
     }
 
     public LiveData<List<Medicine>> getMissedMedicine(LocalDate date) {
         MediatorLiveData<List<Medicine>> result = new MediatorLiveData<>();
 
-        LiveData<List<Medicine>> allMedicinesLive = medicineDao.getAllMedicines();
-        LiveData<List<TakenTable>> takenLive = takenTableDao.getTakenForDateLive(date.toString());
+        LiveData<List<MedicineWithDoses>> medsLive =
+                medicineDao.getMedicinesWithDoses();
+        LiveData<List<DoseTaken>> takenLive =
+                doseTakenDao.getTakenForDateLive(date.toString());
 
         Runnable recompute = () -> {
-            List<Medicine> allMedicines = allMedicinesLive.getValue();
-            List<TakenTable> takenEntries = takenLive.getValue();
+            List<MedicineWithDoses> meds = medsLive.getValue();
+            List<DoseTaken> taken = takenLive.getValue();
 
-            if (allMedicines == null || takenEntries == null) return;
+            if (meds == null) return;
 
-            Map<Integer, Boolean> takenMap = new HashMap<>();
-            for (TakenTable t : takenEntries) {
-                takenMap.put(t.getMedicineId(), t.isTaken());
+            Map<Integer, DoseStatus> takenMap = new HashMap<>();
+            if (taken != null) {
+                for (DoseTaken dt : taken) {
+                    takenMap.put(dt.getDoseId(), dt.getStatus());
+                }
             }
 
             List<Medicine> missed = new ArrayList<>();
-            for (Medicine med : allMedicines) {
-                Boolean wasTaken = takenMap.get(med.getId());
-                if (wasTaken == null || !wasTaken) missed.add(med);
+
+            for (MedicineWithDoses mwd : meds) {
+                Medicine med = mwd.medicine;
+                
+                if (!med.appliesOn(date)) continue;
+
+                boolean anyMissed = false;
+
+                for (Dose dose : mwd.doses) {
+                    DoseStatus status =
+                            takenMap.getOrDefault(dose.getId(), DoseStatus.PENDING);
+
+                    if (status != DoseStatus.TAKEN) {
+                        anyMissed = true;
+                        break;
+                    }
+                }
+
+                if (anyMissed && !mwd.doses.isEmpty()) {
+                    missed.add(med);
+                }
             }
 
             result.setValue(missed);
         };
 
-        result.addSource(allMedicinesLive, meds -> recompute.run());
+        result.addSource(medsLive, m -> recompute.run());
         result.addSource(takenLive, t -> recompute.run());
 
         return result;
     }
+
 
 
     public LiveData<Boolean> hasNoEntriesForDate(LocalDate date) {
@@ -199,25 +260,35 @@ public class MedicineRepository {
 
         MediatorLiveData<Map<LocalDate, DayStatus>> result = new MediatorLiveData<>();
 
-        LiveData<List<Dose>> allDosesLive = doseDao.getAllDosesLive();
+        LiveData<List<MedicineWithDoses>> medsLive = medicineDao.getMedicinesWithDoses();
         LiveData<List<DoseTaken>> takenListLive = doseTakenDao.getTakenForDateRangeLive(start.toString(), end.toString());
 
         Runnable recompute = () -> {
-            List<Dose> allDoses = allDosesLive.getValue();
+            List<MedicineWithDoses> meds = medsLive.getValue();
             List<DoseTaken> takenList = takenListLive.getValue();
 
-            if (allDoses == null || takenList == null) return;
+            if (meds == null || takenList == null) return;
+
+            Map<LocalDate, Integer> takenPerDay = new HashMap<>();
+            for (DoseTaken dt : takenList) {
+                if (dt.getStatus() == DoseStatus.TAKEN) {
+                    LocalDate d = LocalDate.parse(dt.getDate());
+                    takenPerDay.merge(d, 1, Integer::sum);
+                }
+            }
 
             Map<LocalDate, DayStatus> map = new HashMap<>();
-            for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                int expected = allDoses.size();
-                int takenCount = 0;
 
-                for (DoseTaken dt : takenList) {
-                    if (LocalDate.parse(dt.getDate()).equals(date) && dt.getStatus() == DoseStatus.TAKEN) {
-                        takenCount++;
+            for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                int expected = 0;
+
+                for (MedicineWithDoses mwd : meds) {
+                    if (mwd.medicine.appliesOn(date)) {
+                        expected += mwd.doses.size();
                     }
                 }
+
+                int takenCount = takenPerDay.getOrDefault(date, 0);
 
                 DayStatus status;
                 if (expected == 0) status = DayStatus.NO_DATA;
@@ -231,7 +302,8 @@ public class MedicineRepository {
             result.setValue(map);
         };
 
-        result.addSource(allDosesLive, doses -> recompute.run());
+
+        result.addSource(medsLive, meds -> recompute.run());
         result.addSource(takenListLive, taken -> recompute.run());
 
         return result;

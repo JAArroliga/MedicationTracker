@@ -1,8 +1,12 @@
 package com.example.medicationtracker;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 
 @Entity(tableName = "medicine_table")
 public class Medicine {
@@ -11,18 +15,19 @@ public class Medicine {
     private String name;
     private double dosageAmount;
     private String dosageUnit;
-
     private String type; // "pill" or "syringe"
-    private String frequency; // "daily", "weekly", etc.
+    private String frequency; // UI hint only (actual schedule is defined by daysOfWeekMask + doses)
+    @ColumnInfo(name = "days_of_week_mask")
+    private int daysOfWeekMask = 127;
 
-    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency) {
+    public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, int daysOfWeekMask) {
         this.id = id;
         this.name = name;
         this.dosageAmount = dosageAmount;
         this.dosageUnit = dosageUnit;
         this.type = type;
         this.frequency = frequency;
-
+        this.daysOfWeekMask = daysOfWeekMask;
     }
 
     public int getId() {
@@ -49,6 +54,10 @@ public class Medicine {
         return frequency;
     }
 
+    public int getDaysOfWeekMask() {
+        return daysOfWeekMask;
+    }
+
     public void setId(int id){
         this.id = id;
     }
@@ -73,6 +82,9 @@ public class Medicine {
         this.frequency = frequency;
     }
 
+    public void setDaysOfWeekMask(int daysOfWeekMask) {
+        this.daysOfWeekMask = daysOfWeekMask;
+    }
 
     public String getFormattedDosage() {
         return dosageAmount + " " + dosageUnit;
@@ -81,6 +93,23 @@ public class Medicine {
     @NonNull
     @Override
     public String toString() {
-        return name + " - " + getFormattedDosage() + " - " + type + " - " + frequency;
+        return name + " - " + getFormattedDosage() + " - " + type;
+    }
+
+    public boolean appliesOn(LocalDate date) {
+        return (daysOfWeekMask & bitForDay(date.getDayOfWeek())) != 0;
+    }
+
+    public void setDayEnabled(DayOfWeek day, boolean enabled) {
+        int bit = bitForDay(day);
+        if (enabled) {
+            daysOfWeekMask |= bit;
+        } else {
+            daysOfWeekMask &= ~bit;
+        }
+    }
+
+    private static int bitForDay(DayOfWeek day) {
+        return 1 << (day.getValue() % 7);
     }
 }

@@ -21,6 +21,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 public class CalendarFragment extends Fragment {
 
@@ -28,6 +29,7 @@ public class CalendarFragment extends Fragment {
     private CalendarView calendarView;
     private CalendarViewModel calendarViewModel;
     private DayMedicineAdapter dayMedicineAdapter;
+    private YearMonth currentMonth;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -36,19 +38,33 @@ public class CalendarFragment extends Fragment {
 
         calendarView = binding.calendarView;
         calendarView.setSelectionBackground(R.color.grey);
+
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
 
         dayMedicineAdapter = new DayMedicineAdapter();
         binding.medicationPerDayRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.medicationPerDayRecyclerView.setAdapter(dayMedicineAdapter);
 
-        observeMonth(YearMonth.now());
-        setupMonthChangeListener();
-        setupDayClickListener();
-
         calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), list -> {
             dayMedicineAdapter.setMedicines(list);
         });
+
+        calendarViewModel.setSelectedDate(LocalDate.now());
+
+        Calendar today = Calendar.getInstance();
+        String formattedDate = String.format(
+                "%02d/%02d/%04d",
+                today.get(Calendar.MONTH) + 1,
+                today.get(Calendar.DAY_OF_MONTH),
+                today.get(Calendar.YEAR)
+        );
+        binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
+
+        currentMonth = YearMonth.now();
+        calendarViewModel.setSelectedMonth(currentMonth);
+
+        setupMonthChangeListener();
+        setupDayClickListener();
 
         return binding.getRoot();
     }
@@ -78,37 +94,38 @@ public class CalendarFragment extends Fragment {
 
     private void reloadCurrentMonth() {
         Calendar calendar = calendarView.getCurrentPageDate();
-        YearMonth month = YearMonth.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
-        calendarViewModel.getMonthMedicationStatus(month);
-        observeMonth(month);
+        YearMonth newMonth = YearMonth.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
+
+        if (!newMonth.equals(currentMonth)) {
+            currentMonth = newMonth;
+            calendarViewModel.setSelectedMonth(currentMonth);
+        }
     }
 
-    private void observeMonth(YearMonth month) {
+    private void renderMonth(Map<LocalDate, DayStatus> statusMap, YearMonth month) {
+        List<EventDay> events = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
-        calendarViewModel.getMonthMedicationStatus(month).observe(getViewLifecycleOwner(), statusMap -> {
-            List<EventDay> events = new ArrayList<>();
-            LocalDate today = LocalDate.now();
+        for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
+            DayStatus status;
 
-            for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
-                DayStatus status;
-
-                if (current.isAfter(today)) {
-                    status = DayStatus.NO_DATA;
-                } else if (statusMap.containsKey(current)) {
-                    status = statusMap.get(current);
-                } else {
-                    status = DayStatus.NO_DATA;
-                }
-
-                Calendar c = Calendar.getInstance();
-                c.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
-                events.add(new EventDay(c, getIconForStatus(status)));
+            if (current.isAfter(today)) {
+                status = DayStatus.NO_DATA;
+            } else if (statusMap.containsKey(current)) {
+                status = statusMap.get(current);
+            } else {
+                status = DayStatus.NO_DATA;
             }
 
-            calendarView.setEvents(events);
-        });
+            Calendar c = Calendar.getInstance();
+            c.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
+            events.add(new EventDay(c, getIconForStatus(status)));
+        }
+
+        calendarView.setEvents(events);
     }
 
     public int getIconForStatus(DayStatus status) {

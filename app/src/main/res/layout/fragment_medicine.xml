@@ -83,26 +83,50 @@
 
 
     <!-- Days of week (optional, scrollable) -->
+    <!-- Days of week (optional, scrollable) -->
     <HorizontalScrollView
+        android:id="@+id/daysOfWeekScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:layout_marginBottom="8dp">
+
         <LinearLayout
             android:id="@+id/daysOfWeekLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <CheckBox android:text="Mon" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Tue" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Wed" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Thu" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Fri" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Sat" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
-            <CheckBox android:text="Sun" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+            <CheckBox
+                android:id="@+id/checkMon"
+                android:text="Mon" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkTue"
+                android:text="Tue" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkWed"
+                android:text="Wed" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkThu"
+                android:text="Thu" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkFri"
+                android:text="Fri" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkSat"
+                android:text="Sat" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkSun"
+                android:text="Sun" android:layout_height="wrap_content" android:layout_width="wrap_content"/>
         </LinearLayout>
     </HorizontalScrollView>
+
 
     <!-- Add / Update Button -->
     <Button
