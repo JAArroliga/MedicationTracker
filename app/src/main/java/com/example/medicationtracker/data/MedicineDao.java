@@ -38,5 +38,9 @@ public interface MedicineDao {
     @Query("SELECT * FROM medicine_table")
     LiveData<List<MedicineWithDoses>> getMedicinesWithDoses();
 
+    @Query("SELECT * FROM medicine_table")
+    List<MedicineWithDoses> getMedicinesWithDosesSync();
+
+
 
 }

@@ -36,5 +36,9 @@ public interface DoseTakenDao {
     @Query("SELECT * FROM dose_taken WHERE date BETWEEN :startDate AND :endDate")
     LiveData<List<DoseTaken>> getTakenForDateRangeLive(String startDate, String endDate);
 
+    @Query("SELECT * FROM dose_taken WHERE date = :date")
+    List<DoseTaken> getTakenForDateSync(String date);
+
+
 
 }

@@ -14,6 +14,7 @@ import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
 import com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException;
 import com.example.medicationtracker.R;
+import com.example.medicationtracker.data.DailyDoseStatus;
 import com.example.medicationtracker.data.DayStatus;
 import com.example.medicationtracker.databinding.FragmentCalendarBinding;
 
@@ -26,104 +27,97 @@ import java.util.Map;
 
 public class CalendarFragment extends Fragment {
 
+    // ----- UI & ViewModel -----
     private FragmentCalendarBinding binding;
     private CalendarView calendarView;
     private CalendarViewModel calendarViewModel;
     private DayMedicineAdapter dayMedicineAdapter;
+
+    // ----- State -----
     private YearMonth currentMonth;
     private LocalDate selectedDate;
 
 
+    // ----- Lifecycle -----
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
         binding = FragmentCalendarBinding.inflate(inflater, container, false);
 
-        calendarView = binding.calendarView;
-        calendarView.setSelectionBackground(R.color.grey);
-
+        // Initialize ViewModel and Adapter
         calendarViewModel = new ViewModelProvider(this).get(CalendarViewModel.class);
-
         dayMedicineAdapter = new DayMedicineAdapter();
         binding.medicationPerDayRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.medicationPerDayRecyclerView.setAdapter(dayMedicineAdapter);
 
-        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), list -> {
-            dayMedicineAdapter.setMedicines(list);
-        });
+        // Calendar setup
+        calendarView = binding.calendarView;
+        calendarView.setSelectionBackground(R.color.grey);
 
-        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> {
-            if (noEntries != null) {
-                binding.emptyStateTextView.setVisibility(noEntries ? View.VISIBLE : View.GONE);
-                binding.medicationPerDayRecyclerView.setVisibility(noEntries ? View.GONE : View.VISIBLE);
-            }
-        });
+        // Observers
+        setupObservers();
 
-
-        calendarViewModel.setSelectedDate(LocalDate.now());
-
-        Calendar today = Calendar.getInstance();
-        String formattedDate = String.format(
-                "%02d/%02d/%04d",
-                today.get(Calendar.MONTH) + 1,
-                today.get(Calendar.DAY_OF_MONTH),
-                today.get(Calendar.YEAR)
-        );
-        binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
-
+        // Initialize selected date & month
+        selectedDate = LocalDate.now();
+        calendarViewModel.setSelectedDate(selectedDate);
         currentMonth = YearMonth.now();
         calendarViewModel.setSelectedMonth(currentMonth);
 
+        // Display selected date
+        updateSelectedDateText(selectedDate);
+
+        // Render month dots
         calendarViewModel.getMonthStatus().observe(getViewLifecycleOwner(), statusMap -> {
-            if (statusMap != null) {
-                renderMonth(statusMap, currentMonth);
-            }
+            if (statusMap != null) renderMonth(statusMap, currentMonth);
         });
 
+        // Calendar listeners
         setupMonthChangeListener();
         setupDayClickListener();
 
         return binding.getRoot();
     }
 
+
+    // ----- Observers -----
+    private void setupObservers() {
+        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), list -> dayMedicineAdapter.setMedicines(list));
+        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> updateEmptyState(calendarViewModel.getSelectedDateValue()));
+    }
+
+
+    // ----- Calendar Listeners -----
     private void setupDayClickListener() {
         calendarView.setOnDayClickListener(eventDay -> {
             Calendar clicked = eventDay.getCalendar();
-
-            selectedDate = LocalDate.of(clicked.get(Calendar.YEAR), clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH));
+            selectedDate = LocalDate.of(clicked.get(Calendar.YEAR),
+                    clicked.get(Calendar.MONTH) + 1,
+                    clicked.get(Calendar.DAY_OF_MONTH));
 
             calendarViewModel.setSelectedDate(selectedDate);
 
-            String formattedDate = String.format("%02d/%02d/%04d", clicked.get(Calendar.MONTH) + 1, clicked.get(Calendar.DAY_OF_MONTH), clicked.get(Calendar.YEAR));
-            binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
+            updateSelectedDateText(selectedDate);
+            updateDailyMedications(selectedDate);
 
             int currentMonth = calendarView.getCurrentPageDate().get(Calendar.MONTH);
             int clickedMonth = clicked.get(Calendar.MONTH);
 
             if (currentMonth == clickedMonth) {
-                try {
-                    calendarView.setDate(clicked);
-                } catch (com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException e) {
-                    e.printStackTrace();
-                }
+                try { calendarView.setDate(clicked); }
+                catch (OutOfDateRangeException e) { e.printStackTrace(); }
             }
-
         });
     }
 
     private void setupMonthChangeListener() {
-        calendarView.setOnForwardPageChangeListener(() -> {
-            reloadCurrentMonth();
-        });
-        calendarView.setOnPreviousPageChangeListener(() -> {
-            reloadCurrentMonth();
-        });
-
+        calendarView.setOnForwardPageChangeListener(this::reloadCurrentMonth);
+        calendarView.setOnPreviousPageChangeListener(this::reloadCurrentMonth);
     }
 
+
+    // ----- Calendar Helpers -----
     private void reloadCurrentMonth() {
         Calendar calendar = calendarView.getCurrentPageDate();
         YearMonth newMonth = YearMonth.of(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
-
         if (!newMonth.equals(currentMonth)) {
             currentMonth = newMonth;
             calendarViewModel.setSelectedMonth(currentMonth);
@@ -138,24 +132,15 @@ public class CalendarFragment extends Fragment {
         LocalDate end = month.atEndOfMonth();
 
         for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
-            DayStatus status;
-
-            if (current.isAfter(today)) {
-                status = DayStatus.NO_DATA;
-            } else if (statusMap.containsKey(current)) {
-                status = statusMap.get(current);
-            } else {
-                status = DayStatus.NO_DATA;
-            }
+            DayStatus status = (current.isAfter(today)) ? DayStatus.NO_DATA
+                    : statusMap.getOrDefault(current, DayStatus.NO_DATA);
 
             Calendar c = Calendar.getInstance();
             c.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
 
-            if (selectedDate != null  && selectedDate.equals(current)) {
-                events.add(new EventDay(c, R.drawable.ic_selected_dot));
-            } else {
-                events.add(new EventDay(c, getIconForStatus(status)));
-            }
+            events.add((selectedDate != null && selectedDate.equals(current))
+                    ? new EventDay(c, R.drawable.ic_selected_dot)
+                    : new EventDay(c, getIconForStatus(status)));
         }
 
         calendarView.setEvents(events);
@@ -163,29 +148,58 @@ public class CalendarFragment extends Fragment {
         if (selectedDate != null) {
             Calendar selectedCal = Calendar.getInstance();
             selectedCal.set(selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
-
-            try {
-                calendarView.setDate(selectedCal);
-            } catch (com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException e) {
-                e.printStackTrace();
-            }
+            try { calendarView.setDate(selectedCal); }
+            catch (OutOfDateRangeException e) { e.printStackTrace(); }
         }
     }
 
     public int getIconForStatus(DayStatus status) {
         switch (status) {
-            case ALL_TAKEN:
-                return R.drawable.ic_green_dot;
-            case PARTIAL:
-                return R.drawable.ic_yellow_dot;
-            case NONE:
-                return R.drawable.ic_red_dot;
-            case NO_DATA:
-                return R.drawable.ic_grey_dot;
+            case ALL_TAKEN: return R.drawable.ic_green_dot;
+            case PARTIAL:   return R.drawable.ic_yellow_dot;
+            case NONE:      return R.drawable.ic_red_dot;
+            case NO_DATA:   return R.drawable.ic_grey_dot;
         }
         return 0;
     }
 
+
+    // ----- UI Update Helpers -----
+    private void updateDailyMedications(LocalDate date) {
+        calendarViewModel.setSelectedDate(date);
+
+        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), dailyDoses -> {
+            boolean hasNoData = dailyDoses == null || dailyDoses.isEmpty();
+
+            binding.emptyStateTextView.setVisibility(hasNoData ? View.VISIBLE : View.GONE);
+            binding.medicationPerDayRecyclerView.setVisibility(hasNoData ? View.GONE : View.VISIBLE);
+
+            dayMedicineAdapter.setMedicines(dailyDoses);
+        });
+    }
+
+    private void updateEmptyState(LocalDate date) {
+        calendarViewModel.setSelectedDate(date);
+
+        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> {
+            boolean hasNoData = noEntries != null && noEntries;
+
+            binding.emptyStateTextView.setVisibility(hasNoData ? View.VISIBLE : View.GONE);
+            binding.medicationPerDayRecyclerView.setVisibility(hasNoData ? View.GONE : View.VISIBLE);
+
+            if (hasNoData) {
+                dayMedicineAdapter.setMedicines(List.of());
+            }
+        });
+    }
+
+    private void updateSelectedDateText(LocalDate date) {
+        String formattedDate = String.format("%02d/%02d/%04d", date.getMonthValue(), date.getDayOfMonth(), date.getYear());
+        binding.selectedDateTextView.setText("Selected Date: " + formattedDate);
+    }
+
+
+    // ----- Lifecycle Cleanup -----
     @Override
     public void onDestroyView() {
         super.onDestroyView();

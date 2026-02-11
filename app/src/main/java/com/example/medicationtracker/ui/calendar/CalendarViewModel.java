@@ -68,5 +68,18 @@ public class CalendarViewModel extends AndroidViewModel {
         return hasNoEntries;
     }
 
+    public List<DailyDoseStatus> getDailyDosesForDate(LocalDate date) {
+        if (date == null) return List.of();
+        List<DailyDoseStatus> doses = medicineRepository.getDailyDoseStatusSync(date);
+        return doses != null ? doses : List.of();
+    }
+
+    public List<DailyDoseStatus> getDailyDosesSync(LocalDate date) {
+        return medicineRepository.getDailyDoseStatusSync(date);
+    }
+
+    public LocalDate getSelectedDateValue() {
+        return selectedDate.getValue() != null ? selectedDate.getValue() : LocalDate.now();
+    }
 
 }
