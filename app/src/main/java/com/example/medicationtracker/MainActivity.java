@@ -1,10 +1,13 @@
 package com.example.medicationtracker;
 
+import android.app.NotificationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.medicationtracker.notifications.AlarmScheduler;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.annotation.NonNull;
@@ -26,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        createNotificationChannel();
+
+        AlarmScheduler.scheduleTestAlarm(this);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -98,6 +104,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelId = "medication_reminder_channel";
+            CharSequence name = "Medication Reminder";
+            String description = "Reminders to take your medication doses";
+            int importance =  NotificationManager.IMPORTANCE_HIGH;
+
+            android.app.NotificationChannel channel = new android.app.NotificationChannel(channelId, name, importance);
+            channel.setDescription(description);
+
+            android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
+
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
     }
 
 }
