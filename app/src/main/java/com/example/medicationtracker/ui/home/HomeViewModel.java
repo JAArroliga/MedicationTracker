@@ -21,15 +21,21 @@ public class HomeViewModel extends AndroidViewModel {
 
     private final MedicineRepository repository;
     private final LiveData<List<DailyDoseStatus>> todayDoses;
+    private final LiveData<Boolean> hasNoDosesToday;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
         repository = new MedicineRepository(application);
         todayDoses = repository.getDailyDoseStatus(LocalDate.now());
+        hasNoDosesToday = repository.hasNoEntriesForDate(LocalDate.now());
     }
 
     public LiveData<List<DailyDoseStatus>> getTodayDoses() {
         return todayDoses;
+    }
+
+    public LiveData<Boolean> getHasNoDosesToday() {
+        return hasNoDosesToday;
     }
 
     public void markTaken(DailyDoseStatus dose) {

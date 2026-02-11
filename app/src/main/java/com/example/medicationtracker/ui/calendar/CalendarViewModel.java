@@ -27,6 +27,10 @@ public class CalendarViewModel extends AndroidViewModel {
         }
         return medicineRepository.getDailyDoseStatus(date);
     });
+    private final LiveData<Boolean> hasNoEntries = Transformations.switchMap(selectedDate, date -> {
+        if (date == null) return new MutableLiveData<>(true);
+        return medicineRepository.hasNoEntriesForDate(date);
+    });
 
     public CalendarViewModel(@NonNull Application application) {
         super(application);
@@ -52,6 +56,10 @@ public class CalendarViewModel extends AndroidViewModel {
 
     public LiveData<Map<LocalDate, DayStatus>> getMonthStatus() {
         return monthStatus;
+    }
+
+    public LiveData<Boolean> getHasNoEntries() {
+        return hasNoEntries;
     }
 
 

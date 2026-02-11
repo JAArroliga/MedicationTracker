@@ -49,6 +49,14 @@ public class CalendarFragment extends Fragment {
             dayMedicineAdapter.setMedicines(list);
         });
 
+        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> {
+            if (noEntries != null) {
+                binding.emptyStateTextView.setVisibility(noEntries ? View.VISIBLE : View.GONE);
+                binding.medicationPerDayRecyclerView.setVisibility(noEntries ? View.GONE : View.VISIBLE);
+            }
+        });
+
+
         calendarViewModel.setSelectedDate(LocalDate.now());
 
         Calendar today = Calendar.getInstance();
@@ -62,6 +70,12 @@ public class CalendarFragment extends Fragment {
 
         currentMonth = YearMonth.now();
         calendarViewModel.setSelectedMonth(currentMonth);
+
+        calendarViewModel.getMonthStatus().observe(getViewLifecycleOwner(), statusMap -> {
+            if (statusMap != null) {
+                renderMonth(statusMap, currentMonth);
+            }
+        });
 
         setupMonthChangeListener();
         setupDayClickListener();

@@ -219,7 +219,7 @@ public class MedicineRepository {
 
             for (MedicineWithDoses mwd : meds) {
                 Medicine med = mwd.medicine;
-                
+
                 if (!med.appliesOn(date)) continue;
 
                 boolean anyMissed = false;
@@ -251,8 +251,35 @@ public class MedicineRepository {
 
 
     public LiveData<Boolean> hasNoEntriesForDate(LocalDate date) {
-        return Transformations.map(takenTableDao.getTakenForDateLive(date.toString()), List::isEmpty);
+        MediatorLiveData<Boolean> result = new MediatorLiveData<>();
+
+        LiveData<List<MedicineWithDoses>> medsLive = medicineDao.getMedicinesWithDoses();
+
+        Runnable recompute = () -> {
+            List<MedicineWithDoses> meds = medsLive.getValue();
+            if (meds == null) return;
+
+            boolean hasAnyDoses = false;
+
+            for (MedicineWithDoses mwd : meds) {
+                Medicine med = mwd.medicine;
+
+                if (!med.appliesOn(date)) continue;
+
+                if (!mwd.doses.isEmpty()) {
+                    hasAnyDoses = true;
+                    break;
+                }
+            }
+
+            result.setValue(!hasAnyDoses);
+        };
+
+        result.addSource(medsLive, m -> recompute.run());
+
+        return result;
     }
+
 
     public LiveData<Map<LocalDate, DayStatus>> getMedicationStatusMap(YearMonth month) {
         LocalDate start = month.atDay(1);
