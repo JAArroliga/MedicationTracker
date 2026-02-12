@@ -9,8 +9,12 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.MainActivity;
+import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
+import com.example.medicationtracker.data.MedicineDatabase;
+
 
 public class MedicationReminderReceiver extends BroadcastReceiver {
 
@@ -20,6 +24,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
         int doseId = intent.getIntExtra(EXTRA_DOSE_ID, -1);
         String medName = intent.getStringExtra(EXTRA_DOSE_MED_NAME);
 
@@ -27,21 +32,64 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
             medName = "Medication Reminder";
         }
 
+        // 🔹 Open App Intent
         Intent openAppIntent = new Intent(context, MainActivity.class);
-        PendingIntent openAppPendingIntent = PendingIntent.getActivity(context, doseId, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent openAppPendingIntent =
+                PendingIntent.getActivity(
+                        context,
+                        doseId,
+                        openAppIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("Time to take your medication")
-                .setContentText(medName)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(openAppPendingIntent)
-                .setAutoCancel(true);
+        // 🔹 Snooze Intent (DECLARE BEFORE USING)
+        Intent snoozeIntent = new Intent(context, SnoozeReceiver.class);
+        snoozeIntent.putExtra("doseId", doseId);
 
-        NotificationManagerCompat notificationManger = NotificationManagerCompat.from(context);
-        notificationManger.notify(doseId, builder.build());
+        PendingIntent snoozePendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        doseId + 1000, // avoid collision with main alarm
+                        snoozeIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
 
-        Log.d("ReminderReceiver", "ALARM FIRED");
+        // 🔹 Build Notification
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context, CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle("Time to take your medication")
+                        .setContentText(medName)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setContentIntent(openAppPendingIntent)
+                        .addAction(R.drawable.ic_snooze, "Snooze", snoozePendingIntent)
+                        .setAutoCancel(true);
+
+        Log.d("ReminderReceiver", "Displaying notification for doseId: " + doseId);
+        // 🔹 Show Notification
+        NotificationManagerCompat.from(context).notify(doseId, builder.build());
+
+        Log.d("ReminderReceiver", "ALARM FIRED for doseId: " + doseId +
+                " at time: " + System.currentTimeMillis());
+
+        // 🔹 Schedule next dose
+        if (doseId != -1) {
+            MedicineDatabase db = MedicineDatabase.getInstance(context);
+
+            new Thread(() -> {
+                Dose dose = db.doseDao().getDoseById(doseId);
+
+                if (dose != null) {
+                    Medicine medicine = db.medicineDao()
+                            .getMedicineById(dose.getMedicineId());
+
+                    if (medicine != null) {
+                        AlarmScheduler.scheduleNextDose(context, medicine, dose);
+                        Log.d("ReminderReceiver", "Next dose scheduled");
+                    }
+                }
+            }).start();
+        }
     }
 
 }

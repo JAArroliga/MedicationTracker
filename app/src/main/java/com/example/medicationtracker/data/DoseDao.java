@@ -38,4 +38,8 @@ public interface DoseDao {
     @Query("SELECT * FROM dose_table WHERE id = :id")
     Dose getDoseById(int id);
 
+    @Query("SELECT * FROM dose_table")
+    List<Dose> getAllDosesSync();
+
+
 }

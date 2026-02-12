@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.Medicine;
+import com.example.medicationtracker.data.MedicineDatabase;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,21 +50,30 @@ public class AlarmScheduler {
                 android.util.Log.e("AlarmScheduler", "Exact alarm permission not granted");
             }
 
-            Log.d("AlarmScheduler", "canScheduleExactAlarms = " + alarmManager.canScheduleExactAlarms());
-            Log.d("AlarmScheduler", "Scheduling alarm at: " + nextTrigger.getTime().toString());
+            Log.d("AlarmScheduler", "Now: " + Calendar.getInstance().getTime());
+            Log.d("AlarmScheduler", "Scheduling alarm for: " + nextTrigger.getTime());
 
         }
     }
 
     public static void cancelAlarm(Context context, int doseId) {
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, MedicationReminderReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, doseId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        intent.putExtra(MedicationReminderReceiver.EXTRA_DOSE_ID, doseId);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                doseId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
         if (alarmManager != null) {
             alarmManager.cancel(pendingIntent);
         }
     }
+
 
     private static Calendar calculateNextTrigger(Medicine medicine, Dose dose) {
         SimpleDateFormat format = new SimpleDateFormat("hh:mm a", Locale.getDefault());
@@ -100,4 +110,12 @@ public class AlarmScheduler {
         return null;
     }
 
+    public static void scheduleAlarm(Context context, Dose dose) {
+        MedicineDatabase db = MedicineDatabase.getInstance(context);
+        Medicine medicine = db.medicineDao().getMedicineById(dose.getMedicineId());
+
+        if (medicine != null) {
+            scheduleNextDose(context, medicine, dose);
+        }
+    }
 }
