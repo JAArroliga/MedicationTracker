@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -39,6 +40,8 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
         NotificationManagerCompat notificationManger = NotificationManagerCompat.from(context);
         notificationManger.notify(doseId, builder.build());
+
+        Log.d("ReminderReceiver", "ALARM FIRED");
     }
 
 }

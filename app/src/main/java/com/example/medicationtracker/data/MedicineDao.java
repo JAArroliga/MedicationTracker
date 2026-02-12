@@ -38,8 +38,12 @@ public interface MedicineDao {
     @Query("SELECT * FROM medicine_table")
     LiveData<List<MedicineWithDoses>> getMedicinesWithDoses();
 
+    @Transaction
     @Query("SELECT * FROM medicine_table")
     List<MedicineWithDoses> getMedicinesWithDosesSync();
+
+    @Query("SELECT * FROM medicine_table WHERE id = :id")
+    Medicine getMedicineById(int id);
 
 
 

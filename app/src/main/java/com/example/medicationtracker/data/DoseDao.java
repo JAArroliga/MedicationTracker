@@ -32,4 +32,10 @@ public interface DoseDao {
     @Query("DELETE FROM dose_table WHERE medicineId = :medicineId")
     void deleteForMedicine(int medicineId);
 
+    @Query("SELECT * FROM dose_table WHERE medicineId = :medicineId")
+    List<Dose> getDosesForMedicineSync(int medicineId);
+
+    @Query("SELECT * FROM dose_table WHERE id = :id")
+    Dose getDoseById(int id);
+
 }

@@ -1,6 +1,7 @@
 package com.example.medicationtracker.data;
 
 import android.app.Application;
+import android.content.Context;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
@@ -8,7 +9,7 @@ import androidx.lifecycle.MediatorLiveData;
 import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.DoseTaken;
 import com.example.medicationtracker.Medicine;
-import com.example.medicationtracker.TakenTable;
+import com.example.medicationtracker.notifications.AlarmScheduler;
 import com.example.medicationtracker.ui.calendar.DailyMedicationStatus;
 import com.example.medicationtracker.ui.medicine.MedicineWithDoses;
 
@@ -29,9 +30,12 @@ public class MedicineRepository {
     private final DoseTakenDao doseTakenDao;
     private final TakenTableDao takenTableDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Application application;
 
     // ----- Constructor -----
     public MedicineRepository(Application application) {
+        this.application = application;
+
         MedicineDatabase database = MedicineDatabase.getInstance(application);
         medicineDao = database.medicineDao();
         doseDao = database.doseDao();
@@ -45,23 +49,42 @@ public class MedicineRepository {
         executor.execute(() -> {
             long medicineId = medicineDao.insert(medicine);
             for (String time : times) {
-                doseDao.insert(new Dose((int) medicineId, time));
+                Dose dose = new Dose((int) medicineId, time);
+                long doseId = doseDao.insert(dose);
+                dose.setId((int) doseId);
+
+                AlarmScheduler.scheduleNextDose(application, medicine, dose);
             }
         });
     }
 
     public void updateMedicineWithDoses(Medicine medicine, List<String> times) {
         executor.execute(() -> {
+            List<Dose> existingDoses = doseDao.getDosesForMedicineSync(medicine.getId());
+            for (Dose dose: existingDoses) {
+                AlarmScheduler.cancelAlarm(application, dose.getId());
+            }
+
             medicineDao.update(medicine);
             doseDao.deleteForMedicine(medicine.getId());
+
             for (String time : times) {
-                doseDao.insert(new Dose(medicine.getId(), time));
+                Dose dose = new Dose(medicine.getId(), time);
+                long doseId = doseDao.insert(dose);
+                dose.setId((int) doseId);
+
+                AlarmScheduler.scheduleNextDose(application, medicine, dose);
             }
         });
     }
 
     public void delete(Medicine medicine) {
         executor.execute(() -> {
+            List<Dose> doses = doseDao.getDosesForMedicineSync(medicine.getId());
+            for (Dose dose : doses) {
+                AlarmScheduler.cancelAlarm(application, dose.getId());
+            }
+
             doseDao.deleteForMedicine(medicine.getId());
             medicineDao.delete(medicine);
         });
@@ -315,5 +338,19 @@ public class MedicineRepository {
         }
 
         return list;
+    }
+
+    // ---- Alarm Methods ----
+    public void scheduleAllAlarms(Context context) {
+        executor.execute(() -> {
+            List<MedicineWithDoses> medicines = medicineDao.getMedicinesWithDosesSync();
+            if (medicines == null) return;
+
+            for (MedicineWithDoses mwd : medicines) {
+                for (Dose dose : mwd.doses) {
+                    AlarmScheduler.scheduleNextDose(context, mwd.medicine, dose);
+                }
+            }
+        });
     }
 }

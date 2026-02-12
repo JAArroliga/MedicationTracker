@@ -1,13 +1,21 @@
 package com.example.medicationtracker;
 
+import android.app.AlarmManager;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.example.medicationtracker.data.MedicineRepository;
 import com.example.medicationtracker.notifications.AlarmScheduler;
+import com.example.medicationtracker.notifications.MedicationReminderReceiver;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.annotation.NonNull;
@@ -29,12 +37,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        createNotificationChannel();
-
-        AlarmScheduler.scheduleTestAlarm(this);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        createNotificationChannel();
 
         setSupportActionBar(binding.appBarMain.toolbar);
 
@@ -75,6 +82,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        MedicineRepository repository = new MedicineRepository(getApplication());
+
+        AlarmManager alarmManager =
+                (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
+            if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
+
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                startActivity(intent);
+
+            } else {
+                repository.scheduleAllAlarms(this);
+            }
+
+        } else {
+            repository.scheduleAllAlarms(this);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+            }
+        }
+
+
     }
 
     @Override
@@ -108,20 +147,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            String channelId = "medication_reminder_channel";
-            CharSequence name = "Medication Reminder";
-            String description = "Reminders to take your medication doses";
-            int importance =  NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(
+                    MedicationReminderReceiver.CHANNEL_ID,
+                    "Medication Reminders",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
 
-            android.app.NotificationChannel channel = new android.app.NotificationChannel(channelId, name, importance);
-            channel.setDescription(description);
+            channel.setDescription("Reminders for taking medication");
 
-            android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
-
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
             }
         }
     }
+
 
 }
