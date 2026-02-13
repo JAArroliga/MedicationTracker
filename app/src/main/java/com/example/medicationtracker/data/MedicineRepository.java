@@ -1,6 +1,7 @@
 package com.example.medicationtracker.data;
 
 import android.app.Application;
+import android.app.NotificationManager;
 import android.content.Context;
 
 import androidx.lifecycle.LiveData;
@@ -94,6 +95,16 @@ public class MedicineRepository {
         executor.execute(() -> {
             DoseTaken dt = new DoseTaken(doseId, date.toString(), status);
             doseTakenDao.insert(dt);
+
+            if (status == DoseStatus.TAKEN) {
+                AlarmScheduler.cancelAlarm(application, doseId);
+
+                NotificationManager nm = (NotificationManager) application.getSystemService(Context.NOTIFICATION_SERVICE);
+
+                if (nm != null){
+                    nm.cancel(doseId);
+                }
+            }
         });
     }
 

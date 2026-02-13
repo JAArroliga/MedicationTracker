@@ -54,6 +54,11 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
                 );
 
+        Intent markTakenIntent = new Intent(context, MarkTakenReceiver.class);
+        markTakenIntent.putExtra("doseId", doseId);
+
+        PendingIntent markTakenPendingIntent = PendingIntent.getBroadcast(context, doseId, markTakenIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
         // 🔹 Build Notification
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -63,6 +68,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setContentIntent(openAppPendingIntent)
                         .addAction(R.drawable.ic_snooze, "Snooze", snoozePendingIntent)
+                        .addAction(R.drawable.ic_mark_taken, "Mark Taken", markTakenPendingIntent)
                         .setAutoCancel(true);
 
         Log.d("ReminderReceiver", "Displaying notification for doseId: " + doseId);
@@ -90,6 +96,8 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
                 }
             }).start();
         }
+
+
     }
 
 }

@@ -38,6 +38,7 @@
             android:name=".notifications.SnoozeReceiver"
             android:exported="false" />
 
+        <receiver android:name=".notifications.MarkTakenReceiver" />
 
         <receiver
             android:name=".notifications.BootReceiver"
