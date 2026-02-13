@@ -1,6 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/textSettingsTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Enable Reminders Label -->
+    <TextView
+        android:id="@+id/textEnableReminders"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Enable medication reminders"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/textSettingsTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/switchReminders"
+        android:layout_marginTop="32dp" />
+
+    <!-- Enable Reminders Switch -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchReminders"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBaseline_toBaselineOf="@id/textEnableReminders"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Snooze Label -->
+    <TextView
+        android:id="@+id/textSnoozeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Snooze duration"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/textEnableReminders"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="32dp" />
+
+    <!-- Snooze Input -->
+    <EditText
+        android:id="@+id/editSnoozeMinutes"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:gravity="center"
+        android:hint="10"
+        app:layout_constraintTop_toBottomOf="@id/textSnoozeLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp" />
+
+    <!-- Minutes Suffix -->
+    <TextView
+        android:id="@+id/textMinutesSuffix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="minutes"
+        app:layout_constraintBaseline_toBaselineOf="@id/editSnoozeMinutes"
+        app:layout_constraintStart_toEndOf="@id/editSnoozeMinutes"
+        android:layout_marginStart="8dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -95,11 +95,11 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
 
             } else {
-                repository.scheduleAllAlarms(this);
+                repository.scheduleAllAlarms();
             }
 
         } else {
-            repository.scheduleAllAlarms(this);
+            repository.scheduleAllAlarms();
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

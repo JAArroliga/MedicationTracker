@@ -10,6 +10,7 @@ import android.util.Log;
 import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.data.MedicineDatabase;
+import com.example.medicationtracker.ui.settings.SettingsManager;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,6 +22,9 @@ import java.util.Locale;
 public class AlarmScheduler {
 
     public static void scheduleNextDose(Context context, Medicine medicine, Dose dose) {
+        SettingsManager settings = new SettingsManager(context);
+        if (!settings.areRemindersEnabled()) return;
+
         Calendar nextTrigger = calculateNextTrigger(medicine, dose);
         if (nextTrigger == null) return;
 

@@ -29,7 +29,6 @@ public class MedicineRepository {
     private final MedicineDao medicineDao;
     private final DoseDao doseDao;
     private final DoseTakenDao doseTakenDao;
-    private final TakenTableDao takenTableDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Application application;
 
@@ -41,7 +40,6 @@ public class MedicineRepository {
         medicineDao = database.medicineDao();
         doseDao = database.doseDao();
         doseTakenDao = database.doseTakenDao();
-        takenTableDao = database.takenTableDao();
     }
 
 
@@ -352,16 +350,32 @@ public class MedicineRepository {
     }
 
     // ---- Alarm Methods ----
-    public void scheduleAllAlarms(Context context) {
+    public void scheduleAllAlarms() {
         executor.execute(() -> {
             List<MedicineWithDoses> medicines = medicineDao.getMedicinesWithDosesSync();
             if (medicines == null) return;
 
             for (MedicineWithDoses mwd : medicines) {
                 for (Dose dose : mwd.doses) {
-                    AlarmScheduler.scheduleNextDose(context, mwd.medicine, dose);
+                    AlarmScheduler.scheduleNextDose(application, mwd.medicine, dose);
                 }
             }
+        });
+    }
+
+    public void cancelAllAlarms() {
+        executor.execute(() -> {
+            List<MedicineWithDoses> medicines = medicineDao.getMedicinesWithDosesSync();
+            if (medicines == null) return;
+
+            for (MedicineWithDoses mwd : medicines) {
+                for (Dose dose : mwd.doses) {
+                    AlarmScheduler.cancelAlarm(application, dose.getId());
+                }
+            }
+
+            NotificationManager nm = (NotificationManager) application.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) nm.cancelAll();
         });
     }
 }

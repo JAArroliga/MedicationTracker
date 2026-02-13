@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.example.medicationtracker.ui.settings.SettingsManager;
+
 import java.util.Calendar;
 
 public class SnoozeReceiver extends BroadcastReceiver {
@@ -29,8 +31,12 @@ public class SnoozeReceiver extends BroadcastReceiver {
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, doseId, newIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+        SettingsManager settings = new SettingsManager(context);
+        int snoozeMinutes = settings.getSnoozeMinutes();
+        int triggerTime = (int) (System.currentTimeMillis() + (snoozeMinutes * 60 * 1000));
+
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.SECOND, 10);
+        cal.add(Calendar.MINUTE, triggerTime);
         Log.d("SnoozeReceiver", "Scheduling snoozed alarm for: " + cal.getTime());
 
         if (alarmManager != null) {

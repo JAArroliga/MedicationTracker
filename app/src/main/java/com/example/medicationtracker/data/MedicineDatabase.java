@@ -11,15 +11,13 @@ import com.example.medicationtracker.Converters;
 import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.DoseTaken;
 import com.example.medicationtracker.Medicine;
-import com.example.medicationtracker.TakenTable;
 
-@Database(entities = {Medicine.class, TakenTable.class, Dose.class, DoseTaken.class}, version = 7, exportSchema = false)
+@Database(entities = {Medicine.class, Dose.class, DoseTaken.class}, version = 8, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class MedicineDatabase extends RoomDatabase{
 
     private static MedicineDatabase instance;
     public abstract MedicineDao medicineDao();
-    public abstract TakenTableDao takenTableDao();
     public abstract DoseDao doseDao();
     public abstract DoseTakenDao doseTakenDao();
 
