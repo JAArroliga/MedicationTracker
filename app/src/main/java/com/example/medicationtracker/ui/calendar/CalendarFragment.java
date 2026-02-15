@@ -14,7 +14,6 @@ import com.applandeo.materialcalendarview.CalendarView;
 import com.applandeo.materialcalendarview.EventDay;
 import com.applandeo.materialcalendarview.exceptions.OutOfDateRangeException;
 import com.example.medicationtracker.R;
-import com.example.medicationtracker.data.DailyDoseStatus;
 import com.example.medicationtracker.data.DayStatus;
 import com.example.medicationtracker.databinding.FragmentCalendarBinding;
 
@@ -80,9 +79,17 @@ public class CalendarFragment extends Fragment {
 
     // ----- Observers -----
     private void setupObservers() {
-        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), list -> dayMedicineAdapter.setMedicines(list));
-        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> updateEmptyState(calendarViewModel.getSelectedDateValue()));
+        calendarViewModel.getDailyDoses()
+                .observe(getViewLifecycleOwner(), dailyDoses -> {
+                    boolean hasNoData = dailyDoses == null || dailyDoses.isEmpty();
+
+                    binding.emptyStateTextView.setVisibility(hasNoData ? View.VISIBLE : View.GONE);
+                    binding.medicationPerDayRecyclerView.setVisibility(hasNoData ? View.GONE : View.VISIBLE);
+
+                    dayMedicineAdapter.setMedicines(dailyDoses);
+                });
     }
+
 
 
     // ----- Calendar Listeners -----
@@ -96,7 +103,6 @@ public class CalendarFragment extends Fragment {
             calendarViewModel.setSelectedDate(selectedDate);
 
             updateSelectedDateText(selectedDate);
-            updateDailyMedications(selectedDate);
 
             int currentMonth = calendarView.getCurrentPageDate().get(Calendar.MONTH);
             int clickedMonth = clicked.get(Calendar.MONTH);
@@ -165,34 +171,6 @@ public class CalendarFragment extends Fragment {
 
 
     // ----- UI Update Helpers -----
-    private void updateDailyMedications(LocalDate date) {
-        calendarViewModel.setSelectedDate(date);
-
-        calendarViewModel.getDailyDoses().observe(getViewLifecycleOwner(), dailyDoses -> {
-            boolean hasNoData = dailyDoses == null || dailyDoses.isEmpty();
-
-            binding.emptyStateTextView.setVisibility(hasNoData ? View.VISIBLE : View.GONE);
-            binding.medicationPerDayRecyclerView.setVisibility(hasNoData ? View.GONE : View.VISIBLE);
-
-            dayMedicineAdapter.setMedicines(dailyDoses);
-        });
-    }
-
-    private void updateEmptyState(LocalDate date) {
-        calendarViewModel.setSelectedDate(date);
-
-        calendarViewModel.getHasNoEntries().observe(getViewLifecycleOwner(), noEntries -> {
-            boolean hasNoData = noEntries != null && noEntries;
-
-            binding.emptyStateTextView.setVisibility(hasNoData ? View.VISIBLE : View.GONE);
-            binding.medicationPerDayRecyclerView.setVisibility(hasNoData ? View.GONE : View.VISIBLE);
-
-            if (hasNoData) {
-                dayMedicineAdapter.setMedicines(List.of());
-            }
-        });
-    }
-
     private void updateSelectedDateText(LocalDate date) {
         String formattedDate = String.format("%02d/%02d/%04d", date.getMonthValue(), date.getDayOfMonth(), date.getYear());
         binding.selectedDateTextView.setText("Selected Date: " + formattedDate);

@@ -36,6 +36,14 @@ public class AlarmScheduler {
         intent.putExtra(MedicationReminderReceiver.EXTRA_DOSE_ID, dose.getId());
         intent.putExtra(MedicationReminderReceiver.EXTRA_DOSE_MED_NAME, medicine.getName());
 
+        LocalDate doseDate = LocalDate.of(
+                nextTrigger.get(Calendar.YEAR),
+                nextTrigger.get(Calendar.MONTH) + 1,
+                nextTrigger.get(Calendar.DAY_OF_MONTH)
+        );
+
+        intent.putExtra("doseDate", doseDate.toString());
+
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, dose.getId(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         if (alarmManager != null) {
@@ -57,6 +65,7 @@ public class AlarmScheduler {
             Log.d("AlarmScheduler", "Now: " + Calendar.getInstance().getTime());
             Log.d("AlarmScheduler", "Scheduling alarm for: " + nextTrigger.getTime());
 
+
         }
     }
 
@@ -77,7 +86,6 @@ public class AlarmScheduler {
             alarmManager.cancel(pendingIntent);
         }
     }
-
 
     private static Calendar calculateNextTrigger(Medicine medicine, Dose dose) {
         SimpleDateFormat format = new SimpleDateFormat("hh:mm a", Locale.getDefault());

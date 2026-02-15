@@ -46,6 +46,7 @@ public class MedicineRepository {
     // ----- CRUD Operations -----
     public void insertMedicineWithDoses(Medicine medicine, List<String> times) {
         executor.execute(() -> {
+            medicine.setStartDateFromLocalDate(LocalDate.now());
             long medicineId = medicineDao.insert(medicine);
             for (String time : times) {
                 Dose dose = new Dose((int) medicineId, time);

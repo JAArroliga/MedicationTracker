@@ -12,7 +12,7 @@ import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.DoseTaken;
 import com.example.medicationtracker.Medicine;
 
-@Database(entities = {Medicine.class, Dose.class, DoseTaken.class}, version = 8, exportSchema = false)
+@Database(entities = {Medicine.class, Dose.class, DoseTaken.class}, version = 9, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class MedicineDatabase extends RoomDatabase{
 

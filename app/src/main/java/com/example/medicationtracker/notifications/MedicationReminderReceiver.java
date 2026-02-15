@@ -27,6 +27,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
         int doseId = intent.getIntExtra(EXTRA_DOSE_ID, -1);
         String medName = intent.getStringExtra(EXTRA_DOSE_MED_NAME);
+        String doseDateString = intent.getStringExtra("doseDate");
 
         if (medName == null) {
             medName = "Medication Reminder";
@@ -56,6 +57,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
         Intent markTakenIntent = new Intent(context, MarkTakenReceiver.class);
         markTakenIntent.putExtra("doseId", doseId);
+        markTakenIntent.putExtra("doseDate", doseDateString);
 
         PendingIntent markTakenPendingIntent = PendingIntent.getBroadcast(context, doseId, markTakenIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 

@@ -19,6 +19,8 @@ public class Medicine {
     private String frequency; // UI hint only (actual schedule is defined by daysOfWeekMask + doses)
     @ColumnInfo(name = "days_of_week_mask")
     private int daysOfWeekMask = 127;
+    @ColumnInfo(name = "start_date")
+    private String startDate;
 
     public Medicine(int id, String name, double dosageAmount, String dosageUnit, String type, String frequency, int daysOfWeekMask) {
         this.id = id;
@@ -58,6 +60,15 @@ public class Medicine {
         return daysOfWeekMask;
     }
 
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public LocalDate getStartDateAsLocalDate() {
+        return startDate == null ? null : LocalDate.parse(startDate);
+    }
+
+
     public void setId(int id){
         this.id = id;
     }
@@ -86,6 +97,14 @@ public class Medicine {
         this.daysOfWeekMask = daysOfWeekMask;
     }
 
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setStartDateFromLocalDate(LocalDate date) {
+        this.startDate = date == null ? null : date.toString();
+    }
+
     public String getFormattedDosage() {
         return dosageAmount + " " + dosageUnit;
     }
@@ -97,8 +116,16 @@ public class Medicine {
     }
 
     public boolean appliesOn(LocalDate date) {
+        LocalDate start = getStartDateAsLocalDate();
+
+        if (start != null && date.isBefore(start)) {
+            return false;
+        }
+
         return (daysOfWeekMask & bitForDay(date.getDayOfWeek())) != 0;
     }
+
+
 
     public void setDayEnabled(DayOfWeek day, boolean enabled) {
         int bit = bitForDay(day);

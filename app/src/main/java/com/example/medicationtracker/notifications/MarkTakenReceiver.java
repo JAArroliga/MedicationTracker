@@ -5,7 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.example.medicationtracker.data.DoseStatus;
 import com.example.medicationtracker.data.MedicineRepository;
+
+import java.time.LocalDate;
 
 public class MarkTakenReceiver  extends BroadcastReceiver {
 
@@ -19,11 +22,17 @@ public class MarkTakenReceiver  extends BroadcastReceiver {
 
         MedicineRepository repository = new MedicineRepository((android.app.Application) context.getApplicationContext());
 
+        String dateString = intent.getStringExtra("doseDate");
+        if (dateString == null) return;
+
+        LocalDate doseDate = LocalDate.parse(dateString);
+
         repository.markDoseTaken(
                 doseId,
-                java.time.LocalDate.now(),
-                com.example.medicationtracker.data.DoseStatus.TAKEN
+                doseDate,
+                DoseStatus.TAKEN
         );
+
 
     }
 }
