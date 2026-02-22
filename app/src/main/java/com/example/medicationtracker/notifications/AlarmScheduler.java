@@ -11,6 +11,7 @@ import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.data.MedicineDatabase;
 import com.example.medicationtracker.ui.settings.SettingsManager;
+import com.example.medicationtracker.util.DebugLogger;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,7 +29,10 @@ public class AlarmScheduler {
         Calendar nextTrigger = calculateNextTrigger(medicine, dose);
         if (nextTrigger == null) return;
 
-        Log.d("AlarmScheduler", "Scheduling alarm for: " + nextTrigger.getTime());
+        DebugLogger.log(context,
+                "SCHEDULE | doseId=" + dose.getId() +
+                        " | trigger=" + nextTrigger.getTime());
+
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
@@ -59,7 +63,9 @@ public class AlarmScheduler {
             } else {
                 // We don't have permission yet
                 // For now just log it so it doesn’t crash
-                android.util.Log.e("AlarmScheduler", "Exact alarm permission not granted");
+                DebugLogger.log(context,
+                        "FAILED_SCHEDULE | exact alarms not allowed");
+
             }
 
             Log.d("AlarmScheduler", "Now: " + Calendar.getInstance().getTime());
@@ -85,6 +91,10 @@ public class AlarmScheduler {
         if (alarmManager != null) {
             alarmManager.cancel(pendingIntent);
         }
+
+        DebugLogger.log(context,
+                "CANCEL | doseId=" + doseId);
+
     }
 
     private static Calendar calculateNextTrigger(Medicine medicine, Dose dose) {

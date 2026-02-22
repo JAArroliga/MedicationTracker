@@ -14,6 +14,7 @@ import com.example.medicationtracker.MainActivity;
 import com.example.medicationtracker.Medicine;
 import com.example.medicationtracker.R;
 import com.example.medicationtracker.data.MedicineDatabase;
+import com.example.medicationtracker.util.DebugLogger;
 
 
 public class MedicationReminderReceiver extends BroadcastReceiver {
@@ -24,7 +25,6 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-
         int doseId = intent.getIntExtra(EXTRA_DOSE_ID, -1);
         String medName = intent.getStringExtra(EXTRA_DOSE_MED_NAME);
         String doseDateString = intent.getStringExtra("doseDate");
@@ -33,7 +33,13 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
             medName = "Medication Reminder";
         }
 
-        // 🔹 Open App Intent
+        DebugLogger.log(context,
+                "FIRED | doseId=" + doseId +
+                        " | med=" + medName +
+                        " | date=" + doseDateString);
+
+
+        // Open App Intent
         Intent openAppIntent = new Intent(context, MainActivity.class);
         PendingIntent openAppPendingIntent =
                 PendingIntent.getActivity(
@@ -43,7 +49,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
                 );
 
-        // 🔹 Snooze Intent (DECLARE BEFORE USING)
+        // Snooze Intent (DECLARE BEFORE USING)
         Intent snoozeIntent = new Intent(context, SnoozeReceiver.class);
         snoozeIntent.putExtra("doseId", doseId);
 
@@ -61,7 +67,7 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
 
         PendingIntent markTakenPendingIntent = PendingIntent.getBroadcast(context, doseId, markTakenIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // 🔹 Build Notification
+        // Build Notification
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(context, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_notification)
@@ -74,13 +80,13 @@ public class MedicationReminderReceiver extends BroadcastReceiver {
                         .setAutoCancel(true);
 
         Log.d("ReminderReceiver", "Displaying notification for doseId: " + doseId);
-        // 🔹 Show Notification
+        // Show Notification
         NotificationManagerCompat.from(context).notify(doseId, builder.build());
 
         Log.d("ReminderReceiver", "ALARM FIRED for doseId: " + doseId +
                 " at time: " + System.currentTimeMillis());
 
-        // 🔹 Schedule next dose
+        // Schedule next dose
         if (doseId != -1) {
             MedicineDatabase db = MedicineDatabase.getInstance(context);
 

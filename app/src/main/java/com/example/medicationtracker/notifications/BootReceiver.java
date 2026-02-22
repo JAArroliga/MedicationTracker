@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import com.example.medicationtracker.Dose;
 import com.example.medicationtracker.data.MedicineDatabase;
+import com.example.medicationtracker.util.DebugLogger;
 
 import java.util.List;
 
@@ -20,6 +21,9 @@ public class BootReceiver extends BroadcastReceiver {
                 List<Dose> doses = db.doseDao().getAllDosesSync();
 
                 for (Dose dose : doses) {
+                    DebugLogger.log(context,
+                            "BOOT_RESCHEDULE | doseId=" + dose.getId());
+
                     AlarmScheduler.scheduleAlarm(context, dose);
                 }
             }).start();

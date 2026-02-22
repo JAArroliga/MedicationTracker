@@ -92,17 +92,37 @@ public class MedicineRepository {
 
     public void markDoseTaken(int doseId, LocalDate date, DoseStatus status) {
         executor.execute(() -> {
+
             DoseTaken dt = new DoseTaken(doseId, date.toString(), status);
             doseTakenDao.insert(dt);
 
+            // Fetch dose + medicine once
+            Dose dose = doseDao.getDoseById(doseId);
+            if (dose == null) return;
+
+            Medicine medicine = medicineDao.getMedicineById(dose.getMedicineId());
+            if (medicine == null) return;
+
+            NotificationManager nm =
+                    (NotificationManager) application.getSystemService(Context.NOTIFICATION_SERVICE);
+
             if (status == DoseStatus.TAKEN) {
+
+                // Cancel current alarm
                 AlarmScheduler.cancelAlarm(application, doseId);
 
-                NotificationManager nm = (NotificationManager) application.getSystemService(Context.NOTIFICATION_SERVICE);
-
-                if (nm != null){
+                if (nm != null) {
                     nm.cancel(doseId);
                 }
+
+                // Schedule next occurrence
+                AlarmScheduler.scheduleNextDose(application, medicine, dose);
+
+            } else if (status == DoseStatus.PENDING) {
+
+                // Undo case, re-evaluate schedule
+                AlarmScheduler.cancelAlarm(application, doseId);
+                AlarmScheduler.scheduleNextDose(application, medicine, dose);
             }
         });
     }
