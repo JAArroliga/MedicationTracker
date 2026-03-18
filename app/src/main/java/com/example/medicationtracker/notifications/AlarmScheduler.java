@@ -48,6 +48,7 @@ public class AlarmScheduler {
 
         intent.putExtra("doseDate", doseDate.toString());
 
+        cancelAlarm(context, dose.getId());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, dose.getId(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         if (alarmManager != null) {
@@ -60,12 +61,19 @@ public class AlarmScheduler {
                         pendingIntent
                 );
 
-            } else {
-                // We don't have permission yet
-                // For now just log it so it doesn’t crash
-                DebugLogger.log(context,
-                        "FAILED_SCHEDULE | exact alarms not allowed");
+                DebugLogger.log(context, "SCHEDULE_EXACT_SUCCESS | doseId=" + dose.getId());
 
+            } else {
+
+                // FALLBACK
+                alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        nextTrigger.getTimeInMillis(),
+                        pendingIntent
+                );
+
+                DebugLogger.log(context,
+                        "SCHEDULE_INEXACT_FALLBACK | doseId=" + dose.getId());
             }
 
             Log.d("AlarmScheduler", "Now: " + Calendar.getInstance().getTime());
