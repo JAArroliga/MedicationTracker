@@ -130,6 +130,7 @@ public class CalendarFragment extends Fragment {
         }
     }
 
+
     private void renderMonth(Map<LocalDate, DayStatus> statusMap, YearMonth month) {
         List<EventDay> events = new ArrayList<>();
         LocalDate today = LocalDate.now();
@@ -137,27 +138,28 @@ public class CalendarFragment extends Fragment {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
-        for (LocalDate current = start; !current.isAfter(end); current = current.plusDays(1)) {
-            DayStatus status = (current.isAfter(today)) ? DayStatus.NO_DATA
+        for (LocalDate current = start;
+             !current.isAfter(end);
+             current = current.plusDays(1)) {
+
+            DayStatus status = current.isAfter(today)
+                    ? DayStatus.NO_DATA
                     : statusMap.getOrDefault(current, DayStatus.NO_DATA);
 
             Calendar c = Calendar.getInstance();
-            c.set(current.getYear(), current.getMonthValue() - 1, current.getDayOfMonth());
+            c.set(current.getYear(),
+                    current.getMonthValue() - 1,
+                    current.getDayOfMonth());
 
             events.add((selectedDate != null && selectedDate.equals(current))
                     ? new EventDay(c, R.drawable.ic_selected_dot)
                     : new EventDay(c, getIconForStatus(status)));
         }
 
+        // back to the previously selected date.
         calendarView.setEvents(events);
-
-        if (selectedDate != null) {
-            Calendar selectedCal = Calendar.getInstance();
-            selectedCal.set(selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
-            try { calendarView.setDate(selectedCal); }
-            catch (OutOfDateRangeException e) { e.printStackTrace(); }
-        }
     }
+
 
     public int getIconForStatus(DayStatus status) {
         switch (status) {
